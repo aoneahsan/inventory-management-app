@@ -21,7 +21,7 @@ class AppDatabase {
     
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -512,6 +512,312 @@ class AppDatabase {
     await db.execute('CREATE INDEX idx_purchase_bills_supplier ON purchase_bills(supplier_id)');
     await db.execute('CREATE INDEX idx_suppliers_org ON suppliers(organization_id)');
     await db.execute('CREATE INDEX idx_supplier_transactions_supplier ON supplier_transactions(supplier_id)');
+
+    // Multi-location and Advanced Inventory tables (v5)
+    
+    // Branches table
+    await db.execute('''
+      CREATE TABLE branches (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        type TEXT NOT NULL,
+        address TEXT,
+        city TEXT,
+        state TEXT,
+        country TEXT,
+        postal_code TEXT,
+        phone TEXT,
+        email TEXT,
+        manager_id TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Branch inventory table
+    await db.execute('''
+      CREATE TABLE branch_inventory (
+        id TEXT PRIMARY KEY,
+        branch_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        current_stock REAL DEFAULT 0,
+        reserved_stock REAL DEFAULT 0,
+        available_stock REAL DEFAULT 0,
+        min_stock REAL DEFAULT 0,
+        max_stock REAL,
+        reorder_point REAL,
+        last_updated INTEGER NOT NULL,
+        FOREIGN KEY (branch_id) REFERENCES branches (id),
+        FOREIGN KEY (product_id) REFERENCES products (id)
+      )
+    ''');
+
+    // Stock transfers
+    await db.execute('''
+      CREATE TABLE stock_transfers (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        transfer_number TEXT NOT NULL,
+        from_branch_id TEXT NOT NULL,
+        to_branch_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        transfer_date INTEGER NOT NULL,
+        expected_date INTEGER,
+        completed_date INTEGER,
+        total_items INTEGER NOT NULL,
+        notes TEXT,
+        created_by TEXT NOT NULL,
+        approved_by TEXT,
+        received_by TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (from_branch_id) REFERENCES branches (id),
+        FOREIGN KEY (to_branch_id) REFERENCES branches (id)
+      )
+    ''');
+
+    // Stock transfer items
+    await db.execute('''
+      CREATE TABLE stock_transfer_items (
+        id TEXT PRIMARY KEY,
+        transfer_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        received_quantity REAL DEFAULT 0,
+        unit_cost REAL,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (transfer_id) REFERENCES stock_transfers (id),
+        FOREIGN KEY (product_id) REFERENCES products (id)
+      )
+    ''');
+
+    // Serial numbers
+    await db.execute('''
+      CREATE TABLE serial_numbers (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        serial_number TEXT NOT NULL,
+        batch_id TEXT,
+        status TEXT NOT NULL,
+        branch_id TEXT,
+        purchase_date INTEGER,
+        purchase_price REAL,
+        sale_id TEXT,
+        sale_date INTEGER,
+        sale_price REAL,
+        warranty_end_date INTEGER,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (product_id) REFERENCES products (id),
+        FOREIGN KEY (branch_id) REFERENCES branches (id)
+      )
+    ''');
+
+    // Batches
+    await db.execute('''
+      CREATE TABLE batches (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        batch_number TEXT NOT NULL,
+        manufacturing_date INTEGER,
+        expiry_date INTEGER,
+        supplier_id TEXT,
+        cost_price REAL,
+        current_quantity REAL DEFAULT 0,
+        initial_quantity REAL NOT NULL,
+        branch_id TEXT,
+        status TEXT DEFAULT 'active',
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (product_id) REFERENCES products (id),
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id),
+        FOREIGN KEY (branch_id) REFERENCES branches (id)
+      )
+    ''');
+
+    // Composite items
+    await db.execute('''
+      CREATE TABLE composite_items (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        description TEXT,
+        selling_price REAL NOT NULL,
+        cost_price REAL,
+        is_active INTEGER DEFAULT 1,
+        auto_assemble INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Composite item components
+    await db.execute('''
+      CREATE TABLE composite_item_components (
+        id TEXT PRIMARY KEY,
+        composite_item_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (composite_item_id) REFERENCES composite_items (id),
+        FOREIGN KEY (product_id) REFERENCES products (id)
+      )
+    ''');
+
+    // Repackaging rules
+    await db.execute('''
+      CREATE TABLE repackaging_rules (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        from_product_id TEXT NOT NULL,
+        to_product_id TEXT NOT NULL,
+        conversion_rate REAL NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (from_product_id) REFERENCES products (id),
+        FOREIGN KEY (to_product_id) REFERENCES products (id)
+      )
+    ''');
+
+    // Cost lots for FIFO
+    await db.execute('''
+      CREATE TABLE cost_lots (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        branch_id TEXT,
+        lot_number TEXT NOT NULL,
+        purchase_date INTEGER NOT NULL,
+        quantity REAL NOT NULL,
+        remaining_quantity REAL NOT NULL,
+        unit_cost REAL NOT NULL,
+        supplier_id TEXT,
+        purchase_order_id TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (product_id) REFERENCES products (id),
+        FOREIGN KEY (branch_id) REFERENCES branches (id),
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+      )
+    ''');
+
+    // Tax rates
+    await db.execute('''
+      CREATE TABLE tax_rates (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        rate REAL NOT NULL,
+        type TEXT NOT NULL,
+        is_compound INTEGER DEFAULT 0,
+        is_inclusive INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // HSN codes
+    await db.execute('''
+      CREATE TABLE hsn_codes (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        code TEXT NOT NULL,
+        description TEXT,
+        tax_rate_id TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (tax_rate_id) REFERENCES tax_rates (id)
+      )
+    ''');
+
+    // Communication templates
+    await db.execute('''
+      CREATE TABLE communication_templates (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        trigger TEXT NOT NULL,
+        subject TEXT,
+        content TEXT NOT NULL,
+        variables TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Communication logs
+    await db.execute('''
+      CREATE TABLE communication_logs (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        customer_id TEXT,
+        supplier_id TEXT,
+        type TEXT NOT NULL,
+        recipient TEXT NOT NULL,
+        subject TEXT,
+        content TEXT NOT NULL,
+        status TEXT NOT NULL,
+        error_message TEXT,
+        sent_at INTEGER,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Scheduled reports
+    await db.execute('''
+      CREATE TABLE scheduled_reports (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        report_type TEXT NOT NULL,
+        parameters TEXT,
+        schedule TEXT NOT NULL,
+        recipients TEXT NOT NULL,
+        format TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        last_run INTEGER,
+        next_run INTEGER,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Additional indexes for v5 tables
+    await db.execute('CREATE INDEX idx_branches_org ON branches(organization_id)');
+    await db.execute('CREATE INDEX idx_branch_inventory_branch ON branch_inventory(branch_id)');
+    await db.execute('CREATE INDEX idx_branch_inventory_product ON branch_inventory(product_id)');
+    await db.execute('CREATE INDEX idx_transfers_org ON stock_transfers(organization_id)');
+    await db.execute('CREATE INDEX idx_serial_numbers_product ON serial_numbers(product_id)');
+    await db.execute('CREATE INDEX idx_serial_numbers_serial ON serial_numbers(serial_number)');
+    await db.execute('CREATE INDEX idx_batches_product ON batches(product_id)');
+    await db.execute('CREATE INDEX idx_batches_batch ON batches(batch_number)');
+    await db.execute('CREATE INDEX idx_cost_lots_product ON cost_lots(product_id)');
+    await db.execute('CREATE INDEX idx_tax_rates_org ON tax_rates(organization_id)');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -789,6 +1095,366 @@ class AppDatabase {
       await db.execute('CREATE INDEX IF NOT EXISTS idx_purchase_bills_supplier ON purchase_bills(supplier_id)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_suppliers_org ON suppliers(organization_id)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier ON supplier_transactions(supplier_id)');
+    }
+
+    if (oldVersion < 4) {
+      // Add Customer Management tables if not exists
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS customers (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          code TEXT UNIQUE,
+          email TEXT,
+          phone TEXT,
+          mobile TEXT,
+          tax_number TEXT,
+          customer_type TEXT DEFAULT 'retail',
+          price_list_id TEXT,
+          credit_limit REAL DEFAULT 0,
+          current_balance REAL DEFAULT 0,
+          loyalty_points INTEGER DEFAULT 0,
+          address TEXT,
+          shipping_address TEXT,
+          status TEXT DEFAULT 'active',
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+      
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS customer_groups (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT,
+          discount_percentage REAL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+      
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS loyalty_programs (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          points_per_amount REAL DEFAULT 1,
+          redemption_value REAL DEFAULT 0.01,
+          status TEXT DEFAULT 'active',
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+    }
+
+    if (oldVersion < 5) {
+      // Add Multi-location and Advanced Inventory Management tables
+      
+      // Branches table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS branches (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          code TEXT NOT NULL,
+          type TEXT NOT NULL, -- 'store', 'warehouse', 'both'
+          address TEXT,
+          city TEXT,
+          state TEXT,
+          country TEXT,
+          postal_code TEXT,
+          phone TEXT,
+          email TEXT,
+          manager_id TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      // Branch inventory table (stock per branch)
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS branch_inventory (
+          id TEXT PRIMARY KEY,
+          branch_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          current_stock REAL DEFAULT 0,
+          reserved_stock REAL DEFAULT 0,
+          available_stock REAL DEFAULT 0,
+          min_stock REAL DEFAULT 0,
+          max_stock REAL,
+          reorder_point REAL,
+          last_updated INTEGER NOT NULL,
+          FOREIGN KEY (branch_id) REFERENCES branches (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
+
+      // Stock transfers between branches
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS stock_transfers (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          transfer_number TEXT NOT NULL,
+          from_branch_id TEXT NOT NULL,
+          to_branch_id TEXT NOT NULL,
+          status TEXT NOT NULL, -- 'pending', 'in_transit', 'completed', 'cancelled'
+          transfer_date INTEGER NOT NULL,
+          expected_date INTEGER,
+          completed_date INTEGER,
+          total_items INTEGER NOT NULL,
+          notes TEXT,
+          created_by TEXT NOT NULL,
+          approved_by TEXT,
+          received_by TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (from_branch_id) REFERENCES branches (id),
+          FOREIGN KEY (to_branch_id) REFERENCES branches (id)
+        )
+      ''');
+
+      // Stock transfer items
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS stock_transfer_items (
+          id TEXT PRIMARY KEY,
+          transfer_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          received_quantity REAL DEFAULT 0,
+          unit_cost REAL,
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (transfer_id) REFERENCES stock_transfers (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
+
+      // Serial numbers tracking
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS serial_numbers (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          serial_number TEXT NOT NULL,
+          batch_id TEXT,
+          status TEXT NOT NULL, -- 'available', 'sold', 'returned', 'damaged', 'lost'
+          branch_id TEXT,
+          purchase_date INTEGER,
+          purchase_price REAL,
+          sale_id TEXT,
+          sale_date INTEGER,
+          sale_price REAL,
+          warranty_end_date INTEGER,
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (product_id) REFERENCES products (id),
+          FOREIGN KEY (branch_id) REFERENCES branches (id)
+        )
+      ''');
+
+      // Batch tracking
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS batches (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          batch_number TEXT NOT NULL,
+          manufacturing_date INTEGER,
+          expiry_date INTEGER,
+          supplier_id TEXT,
+          cost_price REAL,
+          current_quantity REAL DEFAULT 0,
+          initial_quantity REAL NOT NULL,
+          branch_id TEXT,
+          status TEXT DEFAULT 'active',
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (product_id) REFERENCES products (id),
+          FOREIGN KEY (supplier_id) REFERENCES suppliers (id),
+          FOREIGN KEY (branch_id) REFERENCES branches (id)
+        )
+      ''');
+
+      // Composite items (bundles)
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS composite_items (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          code TEXT NOT NULL,
+          description TEXT,
+          selling_price REAL NOT NULL,
+          cost_price REAL,
+          is_active INTEGER DEFAULT 1,
+          auto_assemble INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      // Composite item components
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS composite_item_components (
+          id TEXT PRIMARY KEY,
+          composite_item_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (composite_item_id) REFERENCES composite_items (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
+
+      // Item repackaging
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS repackaging_rules (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          from_product_id TEXT NOT NULL,
+          to_product_id TEXT NOT NULL,
+          conversion_rate REAL NOT NULL, -- e.g., 1 kg = 10 units of 100g
+          is_active INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (from_product_id) REFERENCES products (id),
+          FOREIGN KEY (to_product_id) REFERENCES products (id)
+        )
+      ''');
+
+      // FIFO cost tracking
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS cost_lots (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          branch_id TEXT,
+          lot_number TEXT NOT NULL,
+          purchase_date INTEGER NOT NULL,
+          quantity REAL NOT NULL,
+          remaining_quantity REAL NOT NULL,
+          unit_cost REAL NOT NULL,
+          supplier_id TEXT,
+          purchase_order_id TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (product_id) REFERENCES products (id),
+          FOREIGN KEY (branch_id) REFERENCES branches (id),
+          FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+        )
+      ''');
+
+      // Tax configuration
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tax_rates (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          code TEXT NOT NULL,
+          rate REAL NOT NULL,
+          type TEXT NOT NULL, -- 'GST', 'VAT', 'Sales Tax', etc.
+          is_compound INTEGER DEFAULT 0,
+          is_inclusive INTEGER DEFAULT 0,
+          is_active INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      // HSN/SAC codes for GST
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS hsn_codes (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          code TEXT NOT NULL,
+          description TEXT,
+          tax_rate_id TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (tax_rate_id) REFERENCES tax_rates (id)
+        )
+      ''');
+
+      // Communication templates
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS communication_templates (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL, -- 'sms', 'email', 'whatsapp'
+          trigger TEXT NOT NULL, -- 'order_placed', 'payment_received', etc.
+          subject TEXT,
+          content TEXT NOT NULL,
+          variables TEXT, -- JSON array of available variables
+          is_active INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      // Communication logs
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS communication_logs (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          customer_id TEXT,
+          supplier_id TEXT,
+          type TEXT NOT NULL,
+          recipient TEXT NOT NULL,
+          subject TEXT,
+          content TEXT NOT NULL,
+          status TEXT NOT NULL, -- 'pending', 'sent', 'failed'
+          error_message TEXT,
+          sent_at INTEGER,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      // Scheduled reports
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS scheduled_reports (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          report_type TEXT NOT NULL,
+          parameters TEXT, -- JSON
+          schedule TEXT NOT NULL, -- 'daily', 'weekly', 'monthly'
+          recipients TEXT NOT NULL, -- JSON array of emails
+          format TEXT NOT NULL, -- 'pdf', 'excel', 'csv'
+          is_active INTEGER DEFAULT 1,
+          last_run INTEGER,
+          next_run INTEGER,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      // Create indexes
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_branches_org ON branches(organization_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_branch_inventory_branch ON branch_inventory(branch_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_branch_inventory_product ON branch_inventory(product_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transfers_org ON stock_transfers(organization_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_serial_numbers_product ON serial_numbers(product_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_serial_numbers_serial ON serial_numbers(serial_number)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_batches_product ON batches(product_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_batches_batch ON batches(batch_number)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_cost_lots_product ON cost_lots(product_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_tax_rates_org ON tax_rates(organization_id)');
     }
   }
 

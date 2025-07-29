@@ -2,12 +2,19 @@ class Customer {
   final String id;
   final String organizationId;
   final String name;
+  final String? code;
   final String? email;
   final String? phone;
+  final String? mobile;
+  final String? taxNumber;
+  final String customerType;
+  final String? priceListId;
+  final double creditLimit;
+  final double currentBalance;
+  final int loyaltyPoints;
   final String? address;
-  final String? taxId;
-  final CustomerCredit? credit;
-  final LoyaltyPoints? loyaltyPoints;
+  final String? shippingAddress;
+  final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -15,12 +22,19 @@ class Customer {
     required this.id,
     required this.organizationId,
     required this.name,
+    this.code,
     this.email,
     this.phone,
+    this.mobile,
+    this.taxNumber,
+    this.customerType = 'retail',
+    this.priceListId,
+    this.creditLimit = 0,
+    this.currentBalance = 0,
+    this.loyaltyPoints = 0,
     this.address,
-    this.taxId,
-    this.credit,
-    this.loyaltyPoints,
+    this.shippingAddress,
+    this.status = 'active',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -29,12 +43,19 @@ class Customer {
     String? id,
     String? organizationId,
     String? name,
+    String? code,
     String? email,
     String? phone,
+    String? mobile,
+    String? taxNumber,
+    String? customerType,
+    String? priceListId,
+    double? creditLimit,
+    double? currentBalance,
+    int? loyaltyPoints,
     String? address,
-    String? taxId,
-    CustomerCredit? credit,
-    LoyaltyPoints? loyaltyPoints,
+    String? shippingAddress,
+    String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -42,12 +63,19 @@ class Customer {
       id: id ?? this.id,
       organizationId: organizationId ?? this.organizationId,
       name: name ?? this.name,
+      code: code ?? this.code,
       email: email ?? this.email,
       phone: phone ?? this.phone,
-      address: address ?? this.address,
-      taxId: taxId ?? this.taxId,
-      credit: credit ?? this.credit,
+      mobile: mobile ?? this.mobile,
+      taxNumber: taxNumber ?? this.taxNumber,
+      customerType: customerType ?? this.customerType,
+      priceListId: priceListId ?? this.priceListId,
+      creditLimit: creditLimit ?? this.creditLimit,
+      currentBalance: currentBalance ?? this.currentBalance,
       loyaltyPoints: loyaltyPoints ?? this.loyaltyPoints,
+      address: address ?? this.address,
+      shippingAddress: shippingAddress ?? this.shippingAddress,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -58,12 +86,19 @@ class Customer {
       'id': id,
       'organizationId': organizationId,
       'name': name,
+      'code': code,
       'email': email,
       'phone': phone,
+      'mobile': mobile,
+      'taxNumber': taxNumber,
+      'customerType': customerType,
+      'priceListId': priceListId,
+      'creditLimit': creditLimit,
+      'currentBalance': currentBalance,
+      'loyaltyPoints': loyaltyPoints,
       'address': address,
-      'taxId': taxId,
-      'credit': credit?.toJson(),
-      'loyaltyPoints': loyaltyPoints?.toJson(),
+      'shippingAddress': shippingAddress,
+      'status': status,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -74,20 +109,28 @@ class Customer {
       id: json['id'],
       organizationId: json['organizationId'],
       name: json['name'],
+      code: json['code'],
       email: json['email'],
       phone: json['phone'],
+      mobile: json['mobile'],
+      taxNumber: json['taxNumber'],
+      customerType: json['customerType'] ?? 'retail',
+      priceListId: json['priceListId'],
+      creditLimit: json['creditLimit'] != null ? (json['creditLimit'] as num).toDouble() : 0,
+      currentBalance: json['currentBalance'] != null ? (json['currentBalance'] as num).toDouble() : 0,
+      loyaltyPoints: json['loyaltyPoints'] ?? 0,
       address: json['address'],
-      taxId: json['taxId'],
-      credit: json['credit'] != null
-          ? CustomerCredit.fromJson(json['credit'])
-          : null,
-      loyaltyPoints: json['loyaltyPoints'] != null
-          ? LoyaltyPoints.fromJson(json['loyaltyPoints'])
-          : null,
+      shippingAddress: json['shippingAddress'],
+      status: json['status'] ?? 'active',
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
+
+  double get availableCredit => creditLimit - currentBalance;
+  bool get hasCredit => creditLimit > 0;
+  bool get isOverLimit => currentBalance > creditLimit;
+  bool get isActive => status == 'active';
 }
 
 class CustomerCredit {
