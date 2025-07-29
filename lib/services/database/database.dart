@@ -21,7 +21,7 @@ class AppDatabase {
     
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -435,6 +435,58 @@ class AppDatabase {
         notes TEXT,
         created_at INTEGER NOT NULL,
         FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+      )
+    ''');
+
+    // Customers table
+    await db.execute('''
+      CREATE TABLE customers (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT UNIQUE,
+        email TEXT,
+        phone TEXT,
+        mobile TEXT,
+        tax_number TEXT,
+        customer_type TEXT DEFAULT 'retail',
+        price_list_id TEXT,
+        credit_limit REAL DEFAULT 0,
+        current_balance REAL DEFAULT 0,
+        loyalty_points INTEGER DEFAULT 0,
+        address TEXT,
+        shipping_address TEXT,
+        status TEXT DEFAULT 'active',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Customer Groups table
+    await db.execute('''
+      CREATE TABLE customer_groups (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        discount_percentage REAL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Loyalty Programs table
+    await db.execute('''
+      CREATE TABLE loyalty_programs (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        points_per_amount REAL DEFAULT 1,
+        redemption_value REAL DEFAULT 0.01,
+        status TEXT DEFAULT 'active',
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
       )
     ''');
 

@@ -20,6 +20,9 @@ import '../pages/pos/checkout_page.dart';
 import '../pages/pos/pos_reports_page.dart';
 import '../pages/suppliers/suppliers_page.dart';
 import '../pages/suppliers/supplier_form_page.dart';
+import '../pages/purchase_orders/purchase_orders_page.dart';
+import '../pages/purchase_orders/purchase_order_form_page.dart';
+import '../pages/purchase_orders/purchase_order_details_page.dart';
 import 'router_notifier.dart';
 
 class AppRouter {
@@ -41,6 +44,9 @@ class AppRouter {
   static const String supplierDetails = '/suppliers/:id';
   static const String supplierNew = '/suppliers/new';
   static const String supplierEdit = '/suppliers/:id/edit';
+  static const String purchaseOrders = '/purchase-orders';
+  static const String purchaseOrderNew = '/purchase-orders/new';
+  static const String purchaseOrderDetails = '/purchase-orders/:id';
 
   static GoRouter router(Ref ref) {
     final routerNotifier = ref.watch(routerNotifierProvider);
@@ -165,6 +171,25 @@ class AppRouter {
           builder: (context, state) {
             final supplierId = state.pathParameters['id']!;
             return SupplierFormPage(supplierId: supplierId);
+          },
+        ),
+        // Purchase Order routes
+        GoRoute(
+          path: purchaseOrders,
+          name: 'purchaseOrders',
+          builder: (context, state) => const PurchaseOrdersPage(),
+        ),
+        GoRoute(
+          path: purchaseOrderNew,
+          name: 'purchaseOrderNew',
+          builder: (context, state) => const PurchaseOrderFormPage(),
+        ),
+        GoRoute(
+          path: purchaseOrderDetails,
+          name: 'purchaseOrderDetails',
+          builder: (context, state) {
+            final orderId = state.pathParameters['id']!;
+            return PurchaseOrderDetailsPage(purchaseOrderId: orderId);
           },
         ),
       ],
