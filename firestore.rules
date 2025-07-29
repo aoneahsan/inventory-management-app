@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function belongsToOrganization(orgId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid));
+    }
+    
+    function hasRole(orgId, role) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role == role;
+    }
+    
+    function hasAnyRole(orgId, roles) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role in roles;
+    }
+    
+    function isActiveSubscription(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)).data.subscription.status == 'active';
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && 
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email', 'createdAt']));
+      allow delete: if false;
+    }
+    
+    // Organizations collection
+    match /organizations/{orgId} {
+      allow read: if belongsToOrganization(orgId);
+      allow create: if isAuthenticated();
+      allow update: if hasAnyRole(orgId, ['owner', 'admin']) && isActiveSubscription(orgId);
+      allow delete: if hasRole(orgId, 'owner');
+      
+      // Organization members subcollection
+      match /members/{memberId} {
+        allow read: if belongsToOrganization(orgId);
+        allow create: if hasAnyRole(orgId, ['owner', 'admin']);
+        allow update: if hasAnyRole(orgId, ['owner', 'admin']) && 
+          (hasRole(orgId, 'owner') || request.resource.data.role != 'owner');
+        allow delete: if hasAnyRole(orgId, ['owner', 'admin']) && memberId != request.auth.uid;
+      }
+      
+      // Products subcollection
+      match /products/{productId} {
+        allow read: if belongsToOrganization(orgId);
+        allow create: if hasAnyRole(orgId, ['owner', 'admin', 'manager', 'staff']) && isActiveSubscription(orgId);
+        allow update: if hasAnyRole(orgId, ['owner', 'admin', 'manager', 'staff']) && isActiveSubscription(orgId);
+        allow delete: if hasAnyRole(orgId, ['owner', 'admin', 'manager']) && isActiveSubscription(orgId);
+      }
+      
+      // Categories subcollection
+      match /categories/{categoryId} {
+        allow read: if belongsToOrganization(orgId);
+        allow create: if hasAnyRole(orgId, ['owner', 'admin', 'manager']) && isActiveSubscription(orgId);
+        allow update: if hasAnyRole(orgId, ['owner', 'admin', 'manager']) && isActiveSubscription(orgId);
+        allow delete: if hasAnyRole(orgId, ['owner', 'admin', 'manager']) && isActiveSubscription(orgId);
+      }
+      
+      // Warehouses subcollection
+      match /warehouses/{warehouseId} {
+        allow read: if belongsToOrganization(orgId);
+        allow create: if hasAnyRole(orgId, ['owner', 'admin']) && isActiveSubscription(orgId);
+        allow update: if hasAnyRole(orgId, ['owner', 'admin', 'manager']) && isActiveSubscription(orgId);
+        allow delete: if hasAnyRole(orgId, ['owner', 'admin']) && isActiveSubscription(orgId);
+      }
+      
+      // Orders subcollection
+      match /orders/{orderId} {
+        allow read: if belongsToOrganization(orgId);
+        allow create: if hasAnyRole(orgId, ['owner', 'admin', 'manager', 'staff']) && isActiveSubscription(orgId);
+        allow update: if hasAnyRole(orgId, ['owner', 'admin', 'manager', 'staff']) && isActiveSubscription(orgId);
+        allow delete: if hasAnyRole(orgId, ['owner', 'admin']) && isActiveSubscription(orgId);
+      }
+      
+      // Inventory movements subcollection
+      match /movements/{movementId} {
+        allow read: if belongsToOrganization(orgId);
+        allow create: if hasAnyRole(orgId, ['owner', 'admin', 'manager', 'staff']) && isActiveSubscription(orgId);
+        allow update: if false; // Movements are immutable
+        allow delete: if false; // Movements cannot be deleted
+      }
+      
+      // Reports subcollection
+      match /reports/{reportId} {
+        allow read: if belongsToOrganization(orgId);
+        allow create: if hasAnyRole(orgId, ['owner', 'admin', 'manager']) && isActiveSubscription(orgId);
+        allow update: if false;
+        allow delete: if hasAnyRole(orgId, ['owner', 'admin']);
+      }
+      
+      // Activity logs subcollection
+      match /activities/{activityId} {
+        allow read: if hasAnyRole(orgId, ['owner', 'admin']);
+        allow create: if belongsToOrganization(orgId);
+        allow update: if false; // Logs are immutable
+        allow delete: if false; // Logs cannot be deleted
+      }
+    }
+    
+    // Invitations collection
+    match /invitations/{inviteId} {
+      allow read: if isAuthenticated() && 
+        (resource.data.email == request.auth.token.email || 
+         belongsToOrganization(resource.data.organizationId));
+      allow create: if isAuthenticated() && 
+        hasAnyRole(request.resource.data.organizationId, ['owner', 'admin']);
+      allow update: if isAuthenticated() && 
+        resource.data.email == request.auth.token.email;
+      allow delete: if isAuthenticated() && 
+        (hasAnyRole(resource.data.organizationId, ['owner', 'admin']) || 
+         resource.data.email == request.auth.token.email);
+    }
+    
+    // Subscriptions collection (managed by Cloud Functions)
+    match /subscriptions/{subscriptionId} {
+      allow read: if hasRole(resource.data.organizationId, 'owner');
+      allow write: if false; // Only Cloud Functions can write
+    }
+    
+    // System configurations (read-only for users)
+    match /config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admins via console
+    }
+  }
+}
