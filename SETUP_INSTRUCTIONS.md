@@ -13,8 +13,8 @@ Ensure you have the following installed:
 ## Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd inventory-management
+git clone https://github.com/aoneahsan/inventory-management-app.git
+cd inventory-management-app
 ```
 
 ## Step 2: Install Dependencies
@@ -211,7 +211,7 @@ flutter pub upgrade --major-versions
 For issues or questions:
 1. Check the [documentation](docs/)
 2. Review [common issues](docs/TROUBLESHOOTING.md)
-3. Contact support@inventorypro.com
+3. Contact support@inventory.zaions.com
 
 ---
 

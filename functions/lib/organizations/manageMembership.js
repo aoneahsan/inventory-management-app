@@ -89,7 +89,7 @@ exports.manageMembership = functions.https.onCall(async (data, context) => {
                 await addMember(orgRef, orgData, targetId, role || "member");
                 break;
             case "remove":
-                await removeMember(orgRef, orgData, targetId, userId);
+                await removeMember(orgRef, orgData, targetId);
                 break;
             case "updateRole":
                 if (!role) {

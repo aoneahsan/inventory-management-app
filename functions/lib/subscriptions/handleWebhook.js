@@ -69,7 +69,8 @@ exports.handleStripeWebhook = functions.https.onRequest(async (req, res) => {
     }
     catch (err) {
         console.error("Webhook signature verification failed:", err);
-        res.status(400).send(`Webhook Error: ${err.message}`);
+        const errMsg = err instanceof Error ? err.message : "Unknown error";
+        res.status(400).send(`Webhook Error: ${errMsg}`);
         return;
     }
     // Handle the event

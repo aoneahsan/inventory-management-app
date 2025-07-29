@@ -75,7 +75,7 @@ export const manageMembership = functions.https.onCall(async (data: ManageMember
       await addMember(orgRef, orgData, targetId, role || "member");
       break;
     case "remove":
-      await removeMember(orgRef, orgData, targetId, userId);
+      await removeMember(orgRef, orgData, targetId);
       break;
     case "updateRole":
       if (!role) {

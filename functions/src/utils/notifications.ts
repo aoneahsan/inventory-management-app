@@ -196,8 +196,8 @@ export const notifyOrganizationMembers = async (
 
     // Send notification to each member
     const promises = members
-      .filter((memberId) => memberId !== notification.excludeUserId)
-      .map((memberId) =>
+      .filter((memberId: string) => memberId !== notification.excludeUserId)
+      .map((memberId: string) =>
         Promise.all([
           createInAppNotification({
             userId: memberId,

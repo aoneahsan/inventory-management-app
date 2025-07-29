@@ -46,13 +46,14 @@ export const createOrganization = functions.https.onCall(async (data: CreateOrga
 
     // Check limits based on subscription
     const subscription = userData.subscription || "free";
-    const limits = {
+    const limits: Record<string, number> = {
       free: 1,
       pro: 5,
       enterprise: -1, // unlimited
     };
 
-    if (limits[subscription] !== -1 && existingOrgs.data().count >= limits[subscription]) {
+    const subscriptionLimit = limits[subscription];
+    if (subscriptionLimit !== -1 && existingOrgs.data().count >= subscriptionLimit) {
       throw new functions.https.HttpsError(
         "resource-exhausted",
         `Organization limit reached for ${subscription} plan`

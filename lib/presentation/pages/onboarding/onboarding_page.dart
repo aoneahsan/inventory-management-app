@@ -51,14 +51,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
   void _completeOnboarding() async {
     await OnboardingService.completeOnboarding();
     if (mounted) {
-      context.go(AppRouter.home);
+      context.go(AppRouter.login);
     }
   }
 
   void _skipOnboarding() async {
     await OnboardingService.completeOnboarding();
     if (mounted) {
-      context.go(AppRouter.home);
+      context.go(AppRouter.login);
     }
   }
 

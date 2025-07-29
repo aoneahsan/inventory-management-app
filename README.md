@@ -49,8 +49,8 @@ A comprehensive, multi-tenant inventory management system built with Flutter and
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/inventory-management.git
-cd inventory-management
+git clone https://github.com/aoneahsan/inventory-management-app.git
+cd inventory-management-app
 ```
 
 ### 2. Install Dependencies
@@ -195,7 +195,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email support@inventorypro.com or join our Slack channel.
+For support, email support@inventory.zaions.com or visit our website.
 
 ---
 

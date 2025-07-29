@@ -79,9 +79,6 @@ dist-ssr
 .env.local
 .env.production
 
-# Capacitor
-ios/
-android/
 
 # Build files
 /build

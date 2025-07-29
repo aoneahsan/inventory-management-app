@@ -1,20 +1,28 @@
 {
   "projects": {
-    "default": "your-firebase-project-id",
-    "staging": "your-staging-project-id",
-    "production": "your-production-project-id"
+    "default": "inventory-zaions-dev",
+    "staging": "inventory-zaions-staging",
+    "production": "inventory-zaions-prod"
   },
   "targets": {
-    "your-firebase-project-id": {
+    "inventory-zaions-dev": {
       "hosting": {
         "app": [
-          "your-firebase-project-id"
-        ],
-        "staging": [
-          "your-staging-site-id"
-        ],
-        "production": [
-          "your-production-site-id"
+          "inventory-zaions-dev"
+        ]
+      }
+    },
+    "inventory-zaions-staging": {
+      "hosting": {
+        "app": [
+          "inventory-zaions-staging"
+        ]
+      }
+    },
+    "inventory-zaions-prod": {
+      "hosting": {
+        "app": [
+          "inventory-zaions-prod"
         ]
       }
     }

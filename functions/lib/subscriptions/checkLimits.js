@@ -70,7 +70,6 @@ exports.checkSubscriptionLimits = functions.https.onCall(async (data, context) =
         };
         let limit;
         let current;
-        let usage;
         switch (limitType) {
             case "items":
                 limit = subscription.itemLimit || 100;

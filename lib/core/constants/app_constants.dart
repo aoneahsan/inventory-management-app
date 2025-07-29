@@ -4,10 +4,10 @@ class AppConstants {
   AppConstants._();
 
   // App Info
-  static const String appName = 'Inventory Pro';
-  static const String appTagline = 'Smart Inventory Management';
-  static const String companyName = 'InventoryPro Inc.';
-  static const String copyrightText = '© 2024 InventoryPro Inc. All rights reserved.';
+  static const String appName = 'Inventory Management';
+  static const String appTagline = 'Smart Inventory Management by Zaions';
+  static const String companyName = 'Zaions';
+  static const String copyrightText = '© 2024 Zaions. All rights reserved.';
 
   // Navigation
   static const int bottomNavItemCount = 5;

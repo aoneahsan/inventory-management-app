@@ -215,7 +215,7 @@ firebase deploy --only functions
 - **Documentation**: `/docs` directory
 - **Firebase Console**: https://console.firebase.google.com
 - **Flutter Documentation**: https://docs.flutter.dev
-- **Support Email**: support@inventorypro.com
+- **Support Email**: support@inventory.zaions.com
 
 ## Version History
 

@@ -33,7 +33,8 @@ export const handleStripeWebhook = functions.https.onRequest(async (req, res) =>
     event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
-    res.status(400).send(`Webhook Error: ${err.message}`);
+    const errMsg = err instanceof Error ? err.message : "Unknown error";
+    res.status(400).send(`Webhook Error: ${errMsg}`);
     return;
   }
 
@@ -219,7 +220,7 @@ async function updateUserSubscription(
   const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
 
   // Define plan limits
-  const planLimits = {
+  const planLimits: Record<string, {itemLimit: number; memberLimit: number}> = {
     free: {itemLimit: 100, memberLimit: 3},
     pro: {itemLimit: 1000, memberLimit: 10},
     enterprise: {itemLimit: -1, memberLimit: -1}, // unlimited

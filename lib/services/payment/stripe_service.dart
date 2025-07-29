@@ -50,8 +50,8 @@ class StripeService {
         'organizationId': organizationId,
         'userId': userId,
         'priceId': _priceIds[tier],
-        'successUrl': successUrl ?? 'https://app.aoneahsan.com/subscription/success',
-        'cancelUrl': cancelUrl ?? 'https://app.aoneahsan.com/subscription/cancel',
+        'successUrl': successUrl ?? 'https://inventory.zaions.com/subscription/success',
+        'cancelUrl': cancelUrl ?? 'https://inventory.zaions.com/subscription/cancel',
       });
 
       return result.data['sessionUrl'] as String;

@@ -43,7 +43,7 @@ class AppConfig {
         _instance = AppConfig._(
           environment: environment,
           apiBaseUrl: EnvConfig.devApiBaseUrl,
-          appName: 'Inventory Pro Dev',
+          appName: 'Inventory Management Dev',
           appVersion: '1.0.0-dev',
           enableLogging: true,
           enableCrashlytics: false,
@@ -60,7 +60,7 @@ class AppConfig {
         _instance = AppConfig._(
           environment: environment,
           apiBaseUrl: EnvConfig.stagingApiBaseUrl,
-          appName: 'Inventory Pro Staging',
+          appName: 'Inventory Management Staging',
           appVersion: '1.0.0-staging',
           enableLogging: true,
           enableCrashlytics: true,
@@ -77,7 +77,7 @@ class AppConfig {
         _instance = AppConfig._(
           environment: environment,
           apiBaseUrl: EnvConfig.prodApiBaseUrl,
-          appName: 'Inventory Pro',
+          appName: 'Inventory Management',
           appVersion: '1.0.0',
           enableLogging: false,
           enableCrashlytics: true,

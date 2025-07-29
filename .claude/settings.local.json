@@ -506,7 +506,8 @@
       "Bash(./revert-imports.sh:*)",
       "Bash(./gradlew:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebFetch(domain:www.zakya.com)"
     ],
     "deny": []
   }

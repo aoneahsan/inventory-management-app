@@ -13,12 +13,12 @@ class EnvConfig {
 
   static const String stagingApiBaseUrl = String.fromEnvironment(
     'STAGING_API_BASE_URL',
-    defaultValue: 'https://staging-api.inventorypro.com/api/v1',
+    defaultValue: 'https://staging-api.inventory.zaions.com/api/v1',
   );
 
   static const String prodApiBaseUrl = String.fromEnvironment(
     'PROD_API_BASE_URL',
-    defaultValue: 'https://api.inventorypro.com/api/v1',
+    defaultValue: 'https://api.inventory.zaions.com/api/v1',
   );
 
   // API Keys
@@ -81,7 +81,7 @@ class EnvConfig {
 
   static const String awsS3Bucket = String.fromEnvironment(
     'AWS_S3_BUCKET',
-    defaultValue: 'inventorypro-uploads',
+    defaultValue: 'inventory-zaions-uploads',
   );
 
   static const String awsRegion = String.fromEnvironment(
@@ -155,13 +155,13 @@ class EnvConfig {
 
   static const String playStoreId = String.fromEnvironment(
     'PLAY_STORE_ID',
-    defaultValue: 'com.inventorypro.app',
+    defaultValue: 'com.aoneahsan.inventory',
   );
 
   // Support
   static const String supportEmail = String.fromEnvironment(
     'SUPPORT_EMAIL',
-    defaultValue: 'support@inventorypro.com',
+    defaultValue: 'support@inventory.zaions.com',
   );
 
   static const String supportPhone = String.fromEnvironment(
@@ -171,39 +171,39 @@ class EnvConfig {
 
   static const String helpCenterUrl = String.fromEnvironment(
     'HELP_CENTER_URL',
-    defaultValue: 'https://help.inventorypro.com',
+    defaultValue: 'https://help.inventory.zaions.com',
   );
 
   // Legal
   static const String termsOfServiceUrl = String.fromEnvironment(
     'TERMS_OF_SERVICE_URL',
-    defaultValue: 'https://inventorypro.com/terms',
+    defaultValue: 'https://inventory.zaions.com/terms',
   );
 
   static const String privacyPolicyUrl = String.fromEnvironment(
     'PRIVACY_POLICY_URL',
-    defaultValue: 'https://inventorypro.com/privacy',
+    defaultValue: 'https://inventory.zaions.com/privacy',
   );
 
   // Social Media
   static const String facebookUrl = String.fromEnvironment(
     'FACEBOOK_URL',
-    defaultValue: 'https://facebook.com/inventorypro',
+    defaultValue: 'https://facebook.com/zaionsinventory',
   );
 
   static const String twitterUrl = String.fromEnvironment(
     'TWITTER_URL',
-    defaultValue: 'https://twitter.com/inventorypro',
+    defaultValue: 'https://twitter.com/zaionsinventory',
   );
 
   static const String linkedInUrl = String.fromEnvironment(
     'LINKEDIN_URL',
-    defaultValue: 'https://linkedin.com/company/inventorypro',
+    defaultValue: 'https://linkedin.com/company/zaions',
   );
 
   static const String youtubeUrl = String.fromEnvironment(
     'YOUTUBE_URL',
-    defaultValue: 'https://youtube.com/inventorypro',
+    defaultValue: 'https://youtube.com/zaions',
   );
 
   // Development Tools
@@ -225,7 +225,7 @@ class EnvConfig {
   // Database
   static const String databaseName = String.fromEnvironment(
     'DATABASE_NAME',
-    defaultValue: 'inventorypro.db',
+    defaultValue: 'inventory_zaions.db',
   );
 
   static const int databaseVersion = int.fromEnvironment(

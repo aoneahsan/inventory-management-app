@@ -1,0 +1,23 @@
+{
+  "name": "inventory-management-app",
+  "version": "1.0.0",
+  "description": "Multi-tenant SaaS inventory management system built with Flutter and Firebase",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aoneahsan/inventory-management-app.git"
+  },
+  "homepage": "https://inventory.zaions.com",
+  "bugs": {
+    "url": "https://github.com/aoneahsan/inventory-management-app/issues"
+  },
+  "author": "Ahsan <support@inventory.zaions.com>",
+  "license": "MIT",
+  "keywords": [
+    "inventory",
+    "management",
+    "flutter",
+    "firebase",
+    "saas",
+    "multi-tenant"
+  ]
+}

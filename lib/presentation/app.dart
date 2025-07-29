@@ -66,5 +66,5 @@ class InventoryApp extends ConsumerWidget {
 
 // App router provider
 final appRouterProvider = Provider<GoRouter>((ref) {
-  return AppRouter.router;
+  return AppRouter.router(ref);
 });
