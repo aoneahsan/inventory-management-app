@@ -23,6 +23,16 @@ import '../pages/suppliers/supplier_form_page.dart';
 import '../pages/purchase_orders/purchase_orders_page.dart';
 import '../pages/purchase_orders/purchase_order_form_page.dart';
 import '../pages/purchase_orders/purchase_order_details_page.dart';
+import '../pages/branch/branches_page.dart';
+import '../pages/branch/branch_form_page.dart';
+import '../pages/transfer/stock_transfers_page.dart';
+import '../pages/advanced/advanced_features_page.dart';
+import '../pages/tracking/serial_batch_page.dart';
+import '../pages/tax/tax_rates_page.dart';
+import '../pages/composite/composite_items_page.dart';
+import '../pages/repackaging/repackaging_page.dart';
+import '../pages/communication/communication_templates_page.dart';
+import '../pages/reporting/scheduled_reports_page.dart';
 import 'router_notifier.dart';
 
 class AppRouter {
@@ -47,6 +57,19 @@ class AppRouter {
   static const String purchaseOrders = '/purchase-orders';
   static const String purchaseOrderNew = '/purchase-orders/new';
   static const String purchaseOrderDetails = '/purchase-orders/:id';
+  static const String branches = '/branches';
+  static const String branchNew = '/branches/new';
+  static const String branchEdit = '/branches/:id';
+  static const String transfers = '/transfers';
+  static const String transferNew = '/transfers/new';
+  static const String transferDetails = '/transfers/:id';
+  static const String advancedFeatures = '/advanced';
+  static const String tracking = '/tracking';
+  static const String taxRates = '/tax-rates';
+  static const String compositeItems = '/composite-items';
+  static const String repackaging = '/repackaging';
+  static const String communication = '/communication';
+  static const String scheduledReports = '/scheduled-reports';
 
   static GoRouter router(Ref ref) {
     final routerNotifier = ref.watch(routerNotifierProvider);
@@ -191,6 +214,67 @@ class AppRouter {
             final orderId = state.pathParameters['id']!;
             return PurchaseOrderDetailsPage(purchaseOrderId: orderId);
           },
+        ),
+        // Branch routes
+        GoRoute(
+          path: branches,
+          name: 'branches',
+          builder: (context, state) => const BranchesPage(),
+        ),
+        GoRoute(
+          path: branchNew,
+          name: 'branchNew',
+          builder: (context, state) => const BranchFormPage(),
+        ),
+        GoRoute(
+          path: branchEdit,
+          name: 'branchEdit',
+          builder: (context, state) {
+            final branchId = state.pathParameters['id']!;
+            return BranchFormPage(branchId: branchId);
+          },
+        ),
+        // Transfer routes
+        GoRoute(
+          path: transfers,
+          name: 'transfers',
+          builder: (context, state) => const StockTransfersPage(),
+        ),
+        // Advanced features
+        GoRoute(
+          path: advancedFeatures,
+          name: 'advancedFeatures',
+          builder: (context, state) => const AdvancedFeaturesPage(),
+        ),
+        GoRoute(
+          path: tracking,
+          name: 'tracking',
+          builder: (context, state) => const SerialBatchPage(),
+        ),
+        GoRoute(
+          path: taxRates,
+          name: 'taxRates',
+          builder: (context, state) => const TaxRatesPage(),
+        ),
+        GoRoute(
+          path: compositeItems,
+          name: 'compositeItems',
+          builder: (context, state) => const CompositeItemsPage(),
+        ),
+        GoRoute(
+          path: repackaging,
+          name: 'repackaging',
+          builder: (context, state) => const RepackagingPage(),
+        ),
+        GoRoute(
+          path: communication,
+          name: 'communication',
+          builder: (context, state) => const CommunicationTemplatesPage(),
+        ),
+        GoRoute(
+          path: scheduledReports,
+          name: 'scheduledReports',
+          builder: (context, state) => const ScheduledReportsPage(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

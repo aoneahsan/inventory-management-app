@@ -27,6 +27,22 @@ class CommunicationTemplate extends Equatable {
     required this.createdAt,
     required this.updatedAt,
   });
+  
+  CommunicationChannel get channel => type == CommunicationType.sms 
+      ? CommunicationChannel.sms
+      : type == CommunicationType.email
+          ? CommunicationChannel.email
+          : CommunicationChannel.whatsapp;
+          
+  TriggerEvent get triggerEvent => trigger == CommunicationTrigger.orderPlaced
+      ? TriggerEvent.orderPlaced
+      : trigger == CommunicationTrigger.orderDelivered
+          ? TriggerEvent.orderDelivered
+          : trigger == CommunicationTrigger.paymentReceived
+              ? TriggerEvent.paymentReceived
+              : trigger == CommunicationTrigger.lowStock
+                  ? TriggerEvent.lowStock
+                  : TriggerEvent.custom;
 
   CommunicationTemplate copyWith({
     String? id,
@@ -259,5 +275,45 @@ enum CommunicationStatus {
       (status) => status.value == value,
       orElse: () => CommunicationStatus.pending,
     );
+  }
+}
+
+// Type aliases for UI compatibility
+typedef CommunicationChannel = CommunicationType;
+typedef TriggerEvent = CommunicationTrigger;
+
+extension CommunicationTypeExtension on CommunicationType {
+  String get displayName {
+    switch (this) {
+      case CommunicationType.sms:
+        return 'SMS';
+      case CommunicationType.email:
+        return 'Email';
+      case CommunicationType.whatsapp:
+        return 'WhatsApp';
+    }
+  }
+}
+
+extension CommunicationTriggerExtension on CommunicationTrigger {
+  String get displayName {
+    switch (this) {
+      case CommunicationTrigger.orderPlaced:
+        return 'Order Placed';
+      case CommunicationTrigger.paymentReceived:
+        return 'Payment Received';
+      case CommunicationTrigger.orderShipped:
+        return 'Order Shipped';
+      case CommunicationTrigger.orderDelivered:
+        return 'Order Delivered';
+      case CommunicationTrigger.lowStock:
+        return 'Low Stock Alert';
+      case CommunicationTrigger.customerRegistration:
+        return 'Customer Registration';
+      case CommunicationTrigger.invoiceGenerated:
+        return 'Invoice Generated';
+      case CommunicationTrigger.custom:
+        return 'Custom';
+    }
   }
 }

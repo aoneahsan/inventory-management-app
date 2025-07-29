@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/branch.dart';
 import '../../../services/branch/branch_service.dart';
-import '../../widgets/app_drawer.dart';
+import '../../providers/organization_provider.dart';
 
 final branchesProvider = FutureProvider.autoDispose<List<Branch>>((ref) async {
   final organizationId = ref.watch(currentOrganizationIdProvider);
@@ -35,7 +35,6 @@ class _BranchesPageState extends ConsumerState<BranchesPage> {
           ),
         ],
       ),
-      drawer: const AppDrawer(),
       body: branchesAsync.when(
         data: (branches) {
           if (branches.isEmpty) {

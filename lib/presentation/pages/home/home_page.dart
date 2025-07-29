@@ -56,6 +56,21 @@ class _HomePageState extends ConsumerState<HomePage> {
         onTap: () => context.go(AppRouter.purchaseOrders),
       ),
       _NavigationItem(
+        icon: Icons.store,
+        label: 'Branches',
+        onTap: () => context.go(AppRouter.branches),
+      ),
+      _NavigationItem(
+        icon: Icons.swap_horiz,
+        label: 'Transfers',
+        onTap: () => context.go(AppRouter.transfers),
+      ),
+      _NavigationItem(
+        icon: Icons.settings_applications,
+        label: 'Advanced',
+        onTap: () => context.go(AppRouter.advancedFeatures),
+      ),
+      _NavigationItem(
         icon: Icons.point_of_sale,
         label: 'POS',
         onTap: () => context.go(AppRouter.pos),

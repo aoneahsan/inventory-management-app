@@ -31,6 +31,16 @@ class ScheduledReport extends Equatable {
     required this.createdAt,
     required this.updatedAt,
   });
+  
+  ReportFrequency get frequency => schedule == ReportSchedule.daily
+      ? ReportFrequency.daily
+      : schedule == ReportSchedule.weekly
+          ? ReportFrequency.weekly
+          : ReportFrequency.monthly;
+          
+  DateTime? get lastRunAt => lastRun;
+  DateTime? get nextRunAt => nextRun;
+  String? get deliveryTime => parameters?['deliveryTime'] ?? '9:00 AM';
 
   ScheduledReport copyWith({
     String? id,
@@ -193,5 +203,61 @@ enum ReportFormat {
       (format) => format.value == value,
       orElse: () => ReportFormat.pdf,
     );
+  }
+}
+
+// Type aliases for UI compatibility
+typedef ReportFrequency = ReportSchedule;
+
+extension ReportTypeExtension on ReportType {
+  String get displayName {
+    switch (this) {
+      case ReportType.inventory:
+        return 'Inventory Report';
+      case ReportType.sales:
+        return 'Sales Report';
+      case ReportType.purchase:
+        return 'Purchase Report';
+      case ReportType.financial:
+        return 'Financial Report';
+      case ReportType.customer:
+        return 'Customer Report';
+      case ReportType.supplier:
+        return 'Supplier Report';
+      case ReportType.stockMovement:
+        return 'Stock Movement';
+      case ReportType.lowStock:
+        return 'Low Stock Alert';
+      case ReportType.expiry:
+        return 'Expiry Report';
+      case ReportType.custom:
+        return 'Custom Report';
+    }
+  }
+}
+
+extension ReportScheduleExtension on ReportSchedule {
+  String get displayName {
+    switch (this) {
+      case ReportSchedule.daily:
+        return 'Daily';
+      case ReportSchedule.weekly:
+        return 'Weekly';
+      case ReportSchedule.monthly:
+        return 'Monthly';
+    }
+  }
+}
+
+extension ReportFormatExtension on ReportFormat {
+  String get displayName {
+    switch (this) {
+      case ReportFormat.pdf:
+        return 'PDF';
+      case ReportFormat.excel:
+        return 'Excel';
+      case ReportFormat.csv:
+        return 'CSV';
+    }
   }
 }

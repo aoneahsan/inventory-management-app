@@ -15,6 +15,7 @@ class Branch extends Equatable {
   final String? email;
   final String? managerId;
   final bool isActive;
+  final bool isDefault;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -33,6 +34,7 @@ class Branch extends Equatable {
     this.email,
     this.managerId,
     required this.isActive,
+    this.isDefault = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -52,6 +54,7 @@ class Branch extends Equatable {
     String? email,
     String? managerId,
     bool? isActive,
+    bool? isDefault,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -70,6 +73,7 @@ class Branch extends Equatable {
       email: email ?? this.email,
       managerId: managerId ?? this.managerId,
       isActive: isActive ?? this.isActive,
+      isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -91,6 +95,7 @@ class Branch extends Equatable {
       'email': email,
       'manager_id': managerId,
       'is_active': isActive ? 1 : 0,
+      'is_default': isDefault ? 1 : 0,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
     };
@@ -112,6 +117,7 @@ class Branch extends Equatable {
       email: map['email'],
       managerId: map['manager_id'],
       isActive: map['is_active'] == 1,
+      isDefault: map['is_default'] == 1,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at']),
     );
@@ -133,6 +139,7 @@ class Branch extends Equatable {
         email,
         managerId,
         isActive,
+        isDefault,
         createdAt,
         updatedAt,
       ];
@@ -151,5 +158,16 @@ enum BranchType {
       (type) => type.value == value,
       orElse: () => BranchType.store,
     );
+  }
+  
+  String get displayName {
+    switch (this) {
+      case BranchType.store:
+        return 'Store';
+      case BranchType.warehouse:
+        return 'Warehouse';
+      case BranchType.both:
+        return 'Store & Warehouse';
+    }
   }
 }

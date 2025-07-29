@@ -164,4 +164,19 @@ enum SerialStatus {
       orElse: () => SerialStatus.available,
     );
   }
+  
+  String get displayName {
+    switch (this) {
+      case SerialStatus.available:
+        return 'Available';
+      case SerialStatus.sold:
+        return 'Sold';
+      case SerialStatus.returned:
+        return 'Returned';
+      case SerialStatus.damaged:
+        return 'Damaged';
+      case SerialStatus.lost:
+        return 'Lost';
+    }
+  }
 }

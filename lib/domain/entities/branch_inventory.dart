@@ -82,7 +82,7 @@ class BranchInventory extends Equatable {
   }
 
   bool get isLowStock => currentStock <= minStock;
-  bool get needsReorder => reorderPoint != null && currentStock <= reorderPoint;
+  bool get needsReorder => reorderPoint != null && currentStock <= reorderPoint!;
   bool get isOverstock => maxStock != null && currentStock > maxStock!;
 
   @override
