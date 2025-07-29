@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/pos_settings.dart';
+import '../../../domain/entities/register.dart';
 import '../../../services/pos/pos_service.dart';
 import '../../../services/pos/register_service.dart';
 import '../../../services/database/database.dart';
 import '../../../services/sync/sync_service.dart';
 import '../../providers/auth_provider.dart';
+import 'pos_main_page.dart';
 
 final registerServiceProvider = Provider<RegisterService>((ref) {
   return RegisterService(
@@ -34,7 +36,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     final posService = ref.watch(posServiceProvider);
-    final authState = ref.watch(authStateProvider);
+    final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -324,12 +326,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
     try {
       final posService = ref.read(posServiceProvider);
-      final authState = ref.read(authStateProvider);
+      final currentUser = ref.read(currentUserProvider);
+      final currentOrg = ref.read(currentOrganizationProvider);
       final registerService = ref.read(registerServiceProvider);
       
       // Get open register
       final registers = await registerService.getOpenRegisters(
-        authState.organization!.id,
+        currentOrg!.id,
       );
       
       if (registers.isEmpty) {
@@ -338,9 +341,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
       // Process the sale
       final sale = await posService.processSale(
-        organizationId: authState.organization!.id,
+        organizationId: currentOrg!.id,
         registerId: registers.first.id,
-        userId: authState.user!.id,
+        userId: currentUser!.id,
         paymentMethod: _selectedPaymentMethod,
         splitPayments: _splitPayments.isNotEmpty ? _splitPayments : null,
       );
@@ -350,7 +353,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         registerId: registers.first.id,
         type: RegisterTransactionType.sale,
         amount: sale.totalAmount,
-        performedBy: authState.user!.id,
+        performedBy: currentUser!.id,
       );
 
       if (mounted) {

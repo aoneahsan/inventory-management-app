@@ -8,6 +8,8 @@ enum MovementType {
   return_,      // Return from customer
   damage,       // Damaged goods
   expired,      // Expired products
+  in_,          // Stock in (alias for purchase)
+  out,          // Stock out (alias for sale)
 }
 
 class InventoryMovement extends Equatable {
@@ -20,6 +22,8 @@ class InventoryMovement extends Equatable {
   final double? totalCost;
   final String? reason;
   final String? referenceNumber;
+  final String? referenceId;
+  final String? referenceType;
   final String? fromWarehouse;
   final String? toWarehouse;
   final String performedBy;
@@ -36,6 +40,8 @@ class InventoryMovement extends Equatable {
     this.totalCost,
     this.reason,
     this.referenceNumber,
+    this.referenceId,
+    this.referenceType,
     this.fromWarehouse,
     this.toWarehouse,
     required this.performedBy,
@@ -64,7 +70,15 @@ class InventoryMovement extends Equatable {
         return 'Damage';
       case MovementType.expired:
         return 'Expired';
+      case MovementType.in_:
+        return 'Stock In';
+      case MovementType.out:
+        return 'Stock Out';
     }
+  }
+
+  Map<String, dynamic> toMap() {
+    return toJson();
   }
 
   Map<String, dynamic> toJson() {
@@ -78,6 +92,8 @@ class InventoryMovement extends Equatable {
       'total_cost': totalCost,
       'reason': reason,
       'reference_number': referenceNumber,
+      'reference_id': referenceId,
+      'reference_type': referenceType,
       'from_warehouse': fromWarehouse,
       'to_warehouse': toWarehouse,
       'performed_by': performedBy,
@@ -111,6 +127,13 @@ class InventoryMovement extends Equatable {
       case 'expired':
         type = MovementType.expired;
         break;
+      case 'in':
+      case 'in_':
+        type = MovementType.in_;
+        break;
+      case 'out':
+        type = MovementType.out;
+        break;
       default:
         type = MovementType.adjustment;
     }
@@ -125,6 +148,8 @@ class InventoryMovement extends Equatable {
       totalCost: (json['total_cost'] as num?)?.toDouble(),
       reason: json['reason'] as String?,
       referenceNumber: json['reference_number'] as String?,
+      referenceId: json['reference_id'] as String?,
+      referenceType: json['reference_type'] as String?,
       fromWarehouse: json['from_warehouse'] as String?,
       toWarehouse: json['to_warehouse'] as String?,
       performedBy: json['performed_by'] as String,
@@ -144,6 +169,8 @@ class InventoryMovement extends Equatable {
         totalCost,
         reason,
         referenceNumber,
+        referenceId,
+        referenceType,
         fromWarehouse,
         toWarehouse,
         performedBy,

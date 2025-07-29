@@ -167,17 +167,17 @@ class TaxRateService {
     
     if (isInclusive) {
       // Calculate base amount from inclusive price
-      final totalRate = taxRate.cgstRate + 
-                       taxRate.sgstRate + 
-                       taxRate.igstRate + 
-                       taxRate.cessRate;
+      final totalRate = (taxRate.cgstRate ?? 0) + 
+                       (taxRate.sgstRate ?? 0) + 
+                       (taxRate.igstRate ?? 0) + 
+                       (taxRate.cessRate ?? 0);
       actualBaseAmount = baseAmount / (1 + totalRate / 100);
     }
 
-    final cgstAmount = actualBaseAmount * taxRate.cgstRate / 100;
-    final sgstAmount = actualBaseAmount * taxRate.sgstRate / 100;
-    final igstAmount = actualBaseAmount * taxRate.igstRate / 100;
-    final cessAmount = actualBaseAmount * taxRate.cessRate / 100;
+    final cgstAmount = actualBaseAmount * (taxRate.cgstRate ?? 0) / 100;
+    final sgstAmount = actualBaseAmount * (taxRate.sgstRate ?? 0) / 100;
+    final igstAmount = actualBaseAmount * (taxRate.igstRate ?? 0) / 100;
+    final cessAmount = actualBaseAmount * (taxRate.cessRate ?? 0) / 100;
 
     final totalTax = cgstAmount + sgstAmount + igstAmount + cessAmount;
     final totalAmount = actualBaseAmount + totalTax;
@@ -203,7 +203,7 @@ class TaxRateService {
   }
 
   Future<List<TaxRate>> getCustomRates(String organizationId) async {
-    return getTaxRates(organizationId, type: TaxType.custom, activeOnly: true);
+    return getTaxRates(organizationId, type: TaxType.other, activeOnly: true);
   }
 
   // Get default tax rate
@@ -297,12 +297,15 @@ class TaxRateService {
         id: '',
         organizationId: organizationId,
         name: 'GST 0%',
+        code: 'GST0',
         type: TaxType.gst,
         rate: 0,
         cgstRate: 0,
         sgstRate: 0,
         igstRate: 0,
         cessRate: 0,
+        isCompound: false,
+        isInclusive: false,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -311,12 +314,15 @@ class TaxRateService {
         id: '',
         organizationId: organizationId,
         name: 'GST 5%',
+        code: 'GST5',
         type: TaxType.gst,
         rate: 5,
         cgstRate: 2.5,
         sgstRate: 2.5,
         igstRate: 5,
         cessRate: 0,
+        isCompound: false,
+        isInclusive: false,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -325,12 +331,15 @@ class TaxRateService {
         id: '',
         organizationId: organizationId,
         name: 'GST 12%',
+        code: 'GST12',
         type: TaxType.gst,
         rate: 12,
         cgstRate: 6,
         sgstRate: 6,
         igstRate: 12,
         cessRate: 0,
+        isCompound: false,
+        isInclusive: false,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -339,12 +348,15 @@ class TaxRateService {
         id: '',
         organizationId: organizationId,
         name: 'GST 18%',
+        code: 'GST18',
         type: TaxType.gst,
         rate: 18,
         cgstRate: 9,
         sgstRate: 9,
         igstRate: 18,
         cessRate: 0,
+        isCompound: false,
+        isInclusive: false,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -353,12 +365,15 @@ class TaxRateService {
         id: '',
         organizationId: organizationId,
         name: 'GST 28%',
+        code: 'GST28',
         type: TaxType.gst,
         rate: 28,
         cgstRate: 14,
         sgstRate: 14,
         igstRate: 28,
         cessRate: 0,
+        isCompound: false,
+        isInclusive: false,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),

@@ -10,6 +10,10 @@ class TaxRate extends Equatable {
   final bool isCompound;
   final bool isInclusive;
   final bool isActive;
+  final double? cgstRate;
+  final double? sgstRate;
+  final double? igstRate;
+  final double? cessRate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,6 +27,10 @@ class TaxRate extends Equatable {
     required this.isCompound,
     required this.isInclusive,
     required this.isActive,
+    this.cgstRate,
+    this.sgstRate,
+    this.igstRate,
+    this.cessRate,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -37,6 +45,10 @@ class TaxRate extends Equatable {
     bool? isCompound,
     bool? isInclusive,
     bool? isActive,
+    double? cgstRate,
+    double? sgstRate,
+    double? igstRate,
+    double? cessRate,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -50,6 +62,10 @@ class TaxRate extends Equatable {
       isCompound: isCompound ?? this.isCompound,
       isInclusive: isInclusive ?? this.isInclusive,
       isActive: isActive ?? this.isActive,
+      cgstRate: cgstRate ?? this.cgstRate,
+      sgstRate: sgstRate ?? this.sgstRate,
+      igstRate: igstRate ?? this.igstRate,
+      cessRate: cessRate ?? this.cessRate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -66,6 +82,10 @@ class TaxRate extends Equatable {
       'is_compound': isCompound ? 1 : 0,
       'is_inclusive': isInclusive ? 1 : 0,
       'is_active': isActive ? 1 : 0,
+      'cgst_rate': cgstRate,
+      'sgst_rate': sgstRate,
+      'igst_rate': igstRate,
+      'cess_rate': cessRate,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
     };
@@ -82,6 +102,10 @@ class TaxRate extends Equatable {
       isCompound: map['is_compound'] == 1,
       isInclusive: map['is_inclusive'] == 1,
       isActive: map['is_active'] == 1,
+      cgstRate: map['cgst_rate']?.toDouble(),
+      sgstRate: map['sgst_rate']?.toDouble(),
+      igstRate: map['igst_rate']?.toDouble(),
+      cessRate: map['cess_rate']?.toDouble(),
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at']),
     );
@@ -101,7 +125,7 @@ class TaxRate extends Equatable {
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         id,
         organizationId,
         name,
@@ -111,6 +135,10 @@ class TaxRate extends Equatable {
         isCompound,
         isInclusive,
         isActive,
+        cgstRate,
+        sgstRate,
+        igstRate,
+        cessRate,
         createdAt,
         updatedAt,
       ];

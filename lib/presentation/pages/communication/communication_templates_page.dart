@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../domain/entities/communication_template.dart';
 import '../../../services/communication/communication_service.dart';
 import '../../providers/organization_provider.dart';
@@ -174,10 +173,16 @@ class CommunicationTemplatesPage extends ConsumerWidget {
         return Icons.shopping_cart;
       case TriggerEvent.orderDelivered:
         return Icons.local_shipping;
+      case TriggerEvent.orderShipped:
+        return Icons.local_shipping;
       case TriggerEvent.paymentReceived:
         return Icons.payment;
       case TriggerEvent.lowStock:
         return Icons.warning;
+      case TriggerEvent.customerRegistration:
+        return Icons.person_add;
+      case TriggerEvent.invoiceGenerated:
+        return Icons.receipt;
       case TriggerEvent.custom:
         return Icons.star;
     }

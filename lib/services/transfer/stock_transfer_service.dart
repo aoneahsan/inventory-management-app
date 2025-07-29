@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../../domain/entities/stock_transfer.dart';
 import '../../domain/entities/inventory_movement.dart';
 import '../database/database.dart';
@@ -242,7 +241,7 @@ class StockTransferService {
         id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
         organizationId: transfer.organizationId,
         productId: item.productId,
-        type: MovementType.in,
+        type: MovementType.in_,
         quantity: item.receivedQuantity > 0 ? item.receivedQuantity : item.quantity,
         reason: 'Transfer from ${transfer.fromBranchId}',
         referenceId: transfer.id,

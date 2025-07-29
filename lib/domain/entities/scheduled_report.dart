@@ -130,6 +130,14 @@ class ScheduledReport extends Equatable {
         } else {
           return DateTime(now.year, now.month + 1, 1, 6, 0);
         }
+      case ReportSchedule.quarterly:
+        final currentQuarter = ((now.month - 1) ~/ 3) + 1;
+        final nextQuarter = currentQuarter == 4 ? 1 : currentQuarter + 1;
+        final nextYear = currentQuarter == 4 ? now.year + 1 : now.year;
+        final nextMonth = (nextQuarter - 1) * 3 + 1;
+        return DateTime(nextYear, nextMonth, 1, 6, 0);
+      case ReportSchedule.yearly:
+        return DateTime(now.year + 1, 1, 1, 6, 0);
     }
   }
 
@@ -177,7 +185,9 @@ enum ReportType {
 enum ReportSchedule {
   daily('daily'),
   weekly('weekly'),
-  monthly('monthly');
+  monthly('monthly'),
+  quarterly('quarterly'),
+  yearly('yearly');
 
   final String value;
   const ReportSchedule(this.value);
@@ -245,6 +255,10 @@ extension ReportScheduleExtension on ReportSchedule {
         return 'Weekly';
       case ReportSchedule.monthly:
         return 'Monthly';
+      case ReportSchedule.quarterly:
+        return 'Quarterly';
+      case ReportSchedule.yearly:
+        return 'Yearly';
     }
   }
 }

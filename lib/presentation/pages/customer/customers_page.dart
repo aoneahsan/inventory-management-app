@@ -392,7 +392,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                     title,
                     style: TextStyle(
                       fontSize: 12,
-                      color: color.shade700,
+                      color: color,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -405,7 +405,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: color.shade900,
+                color: color,
               ),
             ),
           ],

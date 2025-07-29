@@ -171,8 +171,10 @@ class StockTransferItem extends Equatable {
   final double quantity;
   final double receivedQuantity;
   final double? unitCost;
+  final TransferItemStatus status;
   final String? notes;
   final DateTime createdAt;
+  final DateTime updatedAt;
 
   const StockTransferItem({
     required this.id,
@@ -181,9 +183,37 @@ class StockTransferItem extends Equatable {
     required this.quantity,
     required this.receivedQuantity,
     this.unitCost,
+    required this.status,
     this.notes,
     required this.createdAt,
+    required this.updatedAt,
   });
+
+  StockTransferItem copyWith({
+    String? id,
+    String? transferId,
+    String? productId,
+    double? quantity,
+    double? receivedQuantity,
+    double? unitCost,
+    TransferItemStatus? status,
+    String? notes,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return StockTransferItem(
+      id: id ?? this.id,
+      transferId: transferId ?? this.transferId,
+      productId: productId ?? this.productId,
+      quantity: quantity ?? this.quantity,
+      receivedQuantity: receivedQuantity ?? this.receivedQuantity,
+      unitCost: unitCost ?? this.unitCost,
+      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -193,8 +223,10 @@ class StockTransferItem extends Equatable {
       'quantity': quantity,
       'received_quantity': receivedQuantity,
       'unit_cost': unitCost,
+      'status': status.value,
       'notes': notes,
       'created_at': createdAt.millisecondsSinceEpoch,
+      'updated_at': updatedAt.millisecondsSinceEpoch,
     };
   }
 
@@ -206,8 +238,10 @@ class StockTransferItem extends Equatable {
       quantity: map['quantity']?.toDouble() ?? 0.0,
       receivedQuantity: map['received_quantity']?.toDouble() ?? 0.0,
       unitCost: map['unit_cost']?.toDouble(),
+      status: TransferItemStatus.fromString(map['status'] ?? 'pending'),
       notes: map['notes'],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at'] ?? map['created_at']),
     );
   }
 
@@ -219,7 +253,26 @@ class StockTransferItem extends Equatable {
         quantity,
         receivedQuantity,
         unitCost,
+        status,
         notes,
         createdAt,
+        updatedAt,
       ];
+}
+
+enum TransferItemStatus {
+  pending('pending'),
+  approved('approved'),
+  rejected('rejected'),
+  received('received');
+
+  final String value;
+  const TransferItemStatus(this.value);
+
+  static TransferItemStatus fromString(String value) {
+    return TransferItemStatus.values.firstWhere(
+      (status) => status.value == value,
+      orElse: () => TransferItemStatus.pending,
+    );
+  }
 }

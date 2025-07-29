@@ -10,6 +10,7 @@ class CompositeItem extends Equatable {
   final double? costPrice;
   final bool isActive;
   final bool autoAssemble;
+  final bool canBeSoldSeparately;
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<CompositeItemComponent>? components;
@@ -24,6 +25,7 @@ class CompositeItem extends Equatable {
     this.costPrice,
     required this.isActive,
     required this.autoAssemble,
+    this.canBeSoldSeparately = true,
     required this.createdAt,
     required this.updatedAt,
     this.components,
@@ -39,6 +41,7 @@ class CompositeItem extends Equatable {
     double? costPrice,
     bool? isActive,
     bool? autoAssemble,
+    bool? canBeSoldSeparately,
     DateTime? createdAt,
     DateTime? updatedAt,
     List<CompositeItemComponent>? components,
@@ -53,6 +56,7 @@ class CompositeItem extends Equatable {
       costPrice: costPrice ?? this.costPrice,
       isActive: isActive ?? this.isActive,
       autoAssemble: autoAssemble ?? this.autoAssemble,
+      canBeSoldSeparately: canBeSoldSeparately ?? this.canBeSoldSeparately,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       components: components ?? this.components,
@@ -70,6 +74,7 @@ class CompositeItem extends Equatable {
       'cost_price': costPrice,
       'is_active': isActive ? 1 : 0,
       'auto_assemble': autoAssemble ? 1 : 0,
+      'can_be_sold_separately': canBeSoldSeparately ? 1 : 0,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
     };
@@ -86,6 +91,7 @@ class CompositeItem extends Equatable {
       costPrice: map['cost_price']?.toDouble(),
       isActive: map['is_active'] == 1,
       autoAssemble: map['auto_assemble'] == 1,
+      canBeSoldSeparately: map['can_be_sold_separately'] == 1,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at']),
     );
@@ -105,6 +111,8 @@ class CompositeItem extends Equatable {
     return ((sellingPrice - cost) / cost) * 100;
   }
 
+  double get totalCost => calculatedCostPrice;
+
   @override
   List<Object?> get props => [
         id,
@@ -116,6 +124,7 @@ class CompositeItem extends Equatable {
         costPrice,
         isActive,
         autoAssemble,
+        canBeSoldSeparately,
         createdAt,
         updatedAt,
         components,
@@ -127,6 +136,7 @@ class CompositeItemComponent extends Equatable {
   final String compositeItemId;
   final String productId;
   final double quantity;
+  final double? costPrice;
   final DateTime createdAt;
 
   const CompositeItemComponent({
@@ -134,6 +144,7 @@ class CompositeItemComponent extends Equatable {
     required this.compositeItemId,
     required this.productId,
     required this.quantity,
+    this.costPrice,
     required this.createdAt,
   });
 
@@ -143,6 +154,7 @@ class CompositeItemComponent extends Equatable {
       'composite_item_id': compositeItemId,
       'product_id': productId,
       'quantity': quantity,
+      'cost_price': costPrice,
       'created_at': createdAt.millisecondsSinceEpoch,
     };
   }
@@ -153,16 +165,18 @@ class CompositeItemComponent extends Equatable {
       compositeItemId: map['composite_item_id'],
       productId: map['product_id'],
       quantity: map['quantity']?.toDouble() ?? 0.0,
+      costPrice: map['cost_price']?.toDouble(),
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
     );
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         id,
         compositeItemId,
         productId,
         quantity,
+        costPrice,
         createdAt,
       ];
 }

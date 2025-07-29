@@ -22,7 +22,6 @@ final posServiceProvider = Provider<POSService>((ref) {
 final productServiceProvider = Provider<ProductService>((ref) {
   return ProductService(
     database: AppDatabase.instance,
-    syncService: ref.watch(syncServiceProvider),
   );
 });
 
@@ -55,13 +54,13 @@ class _POSMainPageState extends ConsumerState<POSMainPage> {
   }
 
   Future<void> _loadProducts() async {
-    final authState = ref.read(authStateProvider);
-    if (authState.organization == null) return;
+    final currentOrg = ref.read(currentOrganizationProvider);
+    if (currentOrg == null) return;
 
     try {
       final productService = ref.read(productServiceProvider);
       final products = await productService.getProducts(
-        authState.organization!.id,
+        currentOrg.id,
       );
       
       setState(() {
@@ -283,7 +282,7 @@ class _POSMainPageState extends ConsumerState<POSMainPage> {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        '\$${product.sellingPrice.toStringAsFixed(2)}',
+                                        '\$${(product.sellingPrice ?? 0).toStringAsFixed(2)}',
                                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                           color: Theme.of(context).primaryColor,
                                           fontWeight: FontWeight.bold,

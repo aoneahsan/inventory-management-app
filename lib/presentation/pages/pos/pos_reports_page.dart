@@ -50,8 +50,8 @@ class _POSReportsPageState extends ConsumerState<POSReportsPage> {
     setState(() => _isLoading = true);
 
     try {
-      final authState = ref.read(authStateProvider);
-      final organizationId = authState.organization?.id;
+      final currentOrg = ref.read(currentOrganizationProvider);
+      final organizationId = currentOrg?.id;
       
       if (organizationId == null) {
         throw Exception('No organization selected');
@@ -137,8 +137,7 @@ class _POSReportsPageState extends ConsumerState<POSReportsPage> {
 
   Future<void> _exportReport() async {
     try {
-      final authState = ref.read(authStateProvider);
-      final organization = authState.organization;
+      final organization = ref.read(currentOrganizationProvider);
       
       if (organization == null || _salesSummary == null) {
         throw Exception('No data to export');

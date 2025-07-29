@@ -36,13 +36,13 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
   }
 
   Future<void> _loadRegisters() async {
-    final authState = ref.read(authStateProvider);
-    if (authState.organization == null) return;
+    final currentOrg = ref.read(currentOrganizationProvider);
+    if (currentOrg == null) return;
 
     try {
       final registerService = ref.read(registerServiceProvider);
       final registers = await registerService.getOpenRegisters(
-        authState.organization!.id,
+        currentOrg.id,
       );
       
       setState(() {
@@ -306,7 +306,7 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
 
   Future<void> _openRegister(String name, double openingBalance) async {
     try {
-      final authState = ref.read(authStateProvider);
+      final authState = ref.read(currentOrganizationProvider);
       final registerService = ref.read(registerServiceProvider);
       
       await registerService.openRegister(
@@ -334,7 +334,7 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
 
   Future<void> _closeRegister(String registerId, Map<String, int> denominations) async {
     try {
-      final authState = ref.read(authStateProvider);
+      final authState = ref.read(currentOrganizationProvider);
       final registerService = ref.read(registerServiceProvider);
       
       await registerService.closeRegister(

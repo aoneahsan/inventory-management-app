@@ -1,3 +1,5 @@
+import 'receipt.dart';
+
 class POSSettings {
   final String id;
   final String organizationId;

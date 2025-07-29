@@ -53,7 +53,7 @@ class _BranchFormPageState extends ConsumerState<BranchFormPage> {
         setState(() {
           _existingBranch = branch;
           _nameController.text = branch.name;
-          _codeController.text = branch.code ?? '';
+          _codeController.text = branch.code;
           _addressController.text = branch.address ?? '';
           _cityController.text = branch.city ?? '';
           _stateController.text = branch.state ?? '';
@@ -333,7 +333,7 @@ class _BranchFormPageState extends ConsumerState<BranchFormPage> {
         id: widget.branchId ?? '',
         organizationId: organizationId,
         name: _nameController.text.trim(),
-        code: _codeController.text.trim().isEmpty ? null : _codeController.text.trim(),
+        code: _codeController.text.trim(),
         type: _selectedType,
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
         city: _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),

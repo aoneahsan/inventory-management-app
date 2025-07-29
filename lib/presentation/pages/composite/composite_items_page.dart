@@ -87,10 +87,9 @@ class CompositeItemsPage extends ConsumerWidget {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${item.components.length} components'),
-                      if (item.sellingPrice != null)
-                        Text(
-                          'Price: ₹${item.sellingPrice!.toStringAsFixed(2)}',
+                      Text('${item.components?.length ?? 0} components'),
+                      Text(
+                        'Price: ₹${item.sellingPrice.toStringAsFixed(2)}',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -126,7 +125,7 @@ class CompositeItemsPage extends ConsumerWidget {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          ...item.components.map((component) => Padding(
+                          ...(item.components ?? []).map((component) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
                               children: [
@@ -162,14 +161,14 @@ class CompositeItemsPage extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          if (item.sellingPrice != null) ...[
+                          ...[
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text('Selling Price:'),
                                 Text(
-                                  '₹${item.sellingPrice!.toStringAsFixed(2)}',
+                                  '₹${item.sellingPrice.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Theme.of(context).colorScheme.primary,
@@ -183,9 +182,9 @@ class CompositeItemsPage extends ConsumerWidget {
                               children: [
                                 const Text('Margin:'),
                                 Text(
-                                  '${((item.sellingPrice! - item.totalCost) / item.totalCost * 100).toStringAsFixed(1)}%',
+                                  '${((item.sellingPrice - item.totalCost) / item.totalCost * 100).toStringAsFixed(1)}%',
                                   style: TextStyle(
-                                    color: item.sellingPrice! > item.totalCost
+                                    color: item.sellingPrice > item.totalCost
                                         ? Colors.green
                                         : Colors.red,
                                     fontWeight: FontWeight.bold,

@@ -52,15 +52,15 @@ class POSService {
         quantity: existingItem.quantity + quantity,
       );
     } else {
-      final taxAmount = product.sellingPrice * (product.taxRate / 100) * quantity;
+      final taxAmount = product.sellingPrice * ((product.taxRate ?? 0) / 100) * quantity;
       _cart[product.id] = CartItem(
         productId: product.id,
         productName: product.name,
         quantity: quantity,
-        unitPrice: product.sellingPrice,
-        taxPercent: product.taxRate,
+        unitPrice: product.sellingPrice ?? 0,
+        taxPercent: product.taxRate ?? 0,
         taxAmount: taxAmount,
-        totalAmount: (product.sellingPrice * quantity) + taxAmount,
+        totalAmount: ((product.sellingPrice ?? 0) * quantity) + taxAmount,
       );
     }
     
@@ -121,7 +121,7 @@ class POSService {
     String? notes,
   }) async {
     if (_cart.isEmpty) {
-      throw BusinessException('Cart is empty');
+      throw BusinessException(message: 'Cart is empty');
     }
 
     final db = await _database.database;
@@ -211,11 +211,15 @@ class POSService {
         });
 
         // Update product stock
-        await _productService.updateStock(
-          item.productId,
-          -item.quantity,
-          reason: 'Sale #$receiptNumber',
-        );
+        final product = await _productService.getProductById(item.productId);
+        if (product != null) {
+          await _productService.adjustStock(
+            productId: item.productId,
+            newQuantity: (product.currentStock ?? 0) - item.quantity,
+            reason: 'Sale #$receiptNumber',
+            performedBy: userId,
+          );
+        }
       }
     });
 

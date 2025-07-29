@@ -32,7 +32,7 @@ class RegisterService {
     );
 
     if (existingRegisters.isNotEmpty) {
-      throw BusinessException('Register "$name" is already open');
+      throw BusinessException(message: 'Register "$name" is already open');
     }
 
     final now = DateTime.now();
@@ -81,11 +81,11 @@ class RegisterService {
     
     final register = await getRegister(registerId);
     if (register == null) {
-      throw BusinessException('Register not found');
+      throw BusinessException(message: 'Register not found');
     }
 
     if (register.status != RegisterStatus.open) {
-      throw BusinessException('Register is not open');
+      throw BusinessException(message: 'Register is not open');
     }
 
     final actualBalance = _calculateDenominationTotal(denominations);
@@ -131,11 +131,11 @@ class RegisterService {
     
     final register = await getRegister(registerId);
     if (register == null) {
-      throw BusinessException('Register not found');
+      throw BusinessException(message: 'Register not found');
     }
 
     if (register.status != RegisterStatus.open) {
-      throw BusinessException('Register is not open');
+      throw BusinessException(message: 'Register is not open');
     }
 
     final now = DateTime.now();

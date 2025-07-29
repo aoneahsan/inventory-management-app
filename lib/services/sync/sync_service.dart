@@ -297,6 +297,11 @@ class SyncService {
     await _database.addToSyncQueue(tableName, operation, recordId, data);
   }
 
+  // Alias for queueForSync
+  Future<void> addToQueue(String tableName, String operation, String recordId, Map<String, dynamic> data) async {
+    await queueForSync(tableName, operation, recordId, data);
+  }
+
   // Clear failed sync items
   Future<void> clearFailedItems() async {
     try {
