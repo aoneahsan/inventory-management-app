@@ -21,7 +21,7 @@ class AppDatabase {
     
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -172,6 +172,272 @@ class AppDatabase {
       )
     ''');
 
+    // Sales table
+    await db.execute('''
+      CREATE TABLE sales (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        register_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        customer_id TEXT,
+        receipt_number TEXT NOT NULL,
+        subtotal REAL NOT NULL,
+        tax_amount REAL NOT NULL,
+        discount_amount REAL NOT NULL,
+        total_amount REAL NOT NULL,
+        payment_method TEXT NOT NULL,
+        split_payments TEXT,
+        status TEXT NOT NULL,
+        refund_reason TEXT,
+        is_offline_sale INTEGER DEFAULT 0,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        synced_at INTEGER,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (register_id) REFERENCES registers (id),
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      )
+    ''');
+
+    // Sale items table
+    await db.execute('''
+      CREATE TABLE sale_items (
+        id TEXT PRIMARY KEY,
+        sale_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        product_name TEXT NOT NULL,
+        variant_id TEXT,
+        quantity REAL NOT NULL,
+        unit_price REAL NOT NULL,
+        discount_amount REAL NOT NULL,
+        discount_percent REAL NOT NULL,
+        tax_amount REAL NOT NULL,
+        tax_percent REAL NOT NULL,
+        total_amount REAL NOT NULL,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (sale_id) REFERENCES sales (id),
+        FOREIGN KEY (product_id) REFERENCES products (id)
+      )
+    ''');
+
+    // Registers table
+    await db.execute('''
+      CREATE TABLE registers (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        location TEXT,
+        opening_balance REAL NOT NULL,
+        current_balance REAL NOT NULL,
+        expected_balance REAL NOT NULL,
+        status TEXT NOT NULL,
+        opened_by TEXT NOT NULL,
+        opened_at INTEGER NOT NULL,
+        closed_by TEXT,
+        closed_at INTEGER,
+        denominations TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Register transactions table
+    await db.execute('''
+      CREATE TABLE register_transactions (
+        id TEXT PRIMARY KEY,
+        register_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        reason TEXT,
+        performed_by TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (register_id) REFERENCES registers (id)
+      )
+    ''');
+
+    // Receipts table
+    await db.execute('''
+      CREATE TABLE receipts (
+        id TEXT PRIMARY KEY,
+        sale_id TEXT NOT NULL,
+        receipt_number TEXT NOT NULL,
+        template TEXT NOT NULL,
+        custom_fields TEXT,
+        format TEXT NOT NULL,
+        is_printed INTEGER DEFAULT 0,
+        printed_at INTEGER,
+        printer_name TEXT,
+        digital_receipt TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (sale_id) REFERENCES sales (id)
+      )
+    ''');
+
+    // POS settings table
+    await db.execute('''
+      CREATE TABLE pos_settings (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        default_register_id TEXT,
+        receipt_template TEXT,
+        tax_inclusive INTEGER DEFAULT 0,
+        enable_customer_display INTEGER DEFAULT 1,
+        enable_quick_keys INTEGER DEFAULT 1,
+        quick_keys TEXT,
+        payment_methods TEXT,
+        print_receipt_default INTEGER DEFAULT 1,
+        email_receipt_default INTEGER DEFAULT 0,
+        barcode_scanning_enabled INTEGER DEFAULT 1,
+        offline_mode_enabled INTEGER DEFAULT 1,
+        sync_interval INTEGER DEFAULT 30,
+        currency TEXT DEFAULT 'USD',
+        decimal_places INTEGER DEFAULT 2,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Customer credits table
+    await db.execute('''
+      CREATE TABLE customer_credits (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        customer_id TEXT NOT NULL,
+        credit_limit REAL DEFAULT 0,
+        current_balance REAL DEFAULT 0,
+        last_payment_date INTEGER,
+        last_payment_amount REAL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Loyalty points table
+    await db.execute('''
+      CREATE TABLE loyalty_points (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        customer_id TEXT NOT NULL,
+        points_balance INTEGER DEFAULT 0,
+        lifetime_points INTEGER DEFAULT 0,
+        last_earned_date INTEGER,
+        last_redeemed_date INTEGER,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Purchase Orders table
+    await db.execute('''
+      CREATE TABLE purchase_orders (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        supplier_id TEXT NOT NULL,
+        po_number TEXT NOT NULL,
+        order_date INTEGER NOT NULL,
+        expected_date INTEGER,
+        status TEXT NOT NULL,
+        total_amount REAL NOT NULL,
+        tax_amount REAL DEFAULT 0,
+        discount_amount REAL DEFAULT 0,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        created_by TEXT NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+      )
+    ''');
+
+    // Purchase Order Items table
+    await db.execute('''
+      CREATE TABLE purchase_order_items (
+        id TEXT PRIMARY KEY,
+        purchase_order_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        received_quantity REAL DEFAULT 0,
+        unit_price REAL NOT NULL,
+        tax_rate REAL DEFAULT 0,
+        discount_rate REAL DEFAULT 0,
+        total_amount REAL NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id),
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      )
+    ''');
+
+    // Purchase Bills table
+    await db.execute('''
+      CREATE TABLE purchase_bills (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        supplier_id TEXT NOT NULL,
+        purchase_order_id TEXT,
+        bill_number TEXT NOT NULL,
+        bill_date INTEGER NOT NULL,
+        due_date INTEGER,
+        status TEXT NOT NULL,
+        total_amount REAL NOT NULL,
+        paid_amount REAL DEFAULT 0,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id),
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id),
+        FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id)
+      )
+    ''');
+
+    // Suppliers table
+    await db.execute('''
+      CREATE TABLE suppliers (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT UNIQUE,
+        email TEXT,
+        phone TEXT,
+        mobile TEXT,
+        website TEXT,
+        tax_number TEXT,
+        address TEXT,
+        city TEXT,
+        state TEXT,
+        country TEXT,
+        postal_code TEXT,
+        payment_terms INTEGER DEFAULT 30,
+        credit_limit REAL DEFAULT 0,
+        current_balance REAL DEFAULT 0,
+        status TEXT DEFAULT 'active',
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (organization_id) REFERENCES organizations (id)
+      )
+    ''');
+
+    // Supplier Transactions table
+    await db.execute('''
+      CREATE TABLE supplier_transactions (
+        id TEXT PRIMARY KEY,
+        supplier_id TEXT NOT NULL,
+        transaction_type TEXT NOT NULL,
+        reference_id TEXT,
+        amount REAL NOT NULL,
+        balance REAL NOT NULL,
+        transaction_date INTEGER NOT NULL,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+      )
+    ''');
+
     // Create indexes
     await db.execute('CREATE INDEX idx_products_org ON products(organization_id)');
     await db.execute('CREATE INDEX idx_products_sku ON products(sku)');
@@ -181,10 +447,297 @@ class AppDatabase {
     await db.execute('CREATE INDEX idx_movements_product ON inventory_movements(product_id)');
     await db.execute('CREATE INDEX idx_roles_org ON roles(organization_id)');
     await db.execute('CREATE INDEX idx_roles_system ON roles(is_system_role)');
+    await db.execute('CREATE INDEX idx_sales_org ON sales(organization_id)');
+    await db.execute('CREATE INDEX idx_sales_register ON sales(register_id)');
+    await db.execute('CREATE INDEX idx_sales_receipt ON sales(receipt_number)');
+    await db.execute('CREATE INDEX idx_sale_items_sale ON sale_items(sale_id)');
+    await db.execute('CREATE INDEX idx_registers_org ON registers(organization_id)');
+    await db.execute('CREATE INDEX idx_receipts_sale ON receipts(sale_id)');
+    await db.execute('CREATE INDEX idx_purchase_orders_org ON purchase_orders(organization_id)');
+    await db.execute('CREATE INDEX idx_purchase_orders_supplier ON purchase_orders(supplier_id)');
+    await db.execute('CREATE INDEX idx_purchase_order_items_po ON purchase_order_items(purchase_order_id)');
+    await db.execute('CREATE INDEX idx_purchase_bills_org ON purchase_bills(organization_id)');
+    await db.execute('CREATE INDEX idx_purchase_bills_supplier ON purchase_bills(supplier_id)');
+    await db.execute('CREATE INDEX idx_suppliers_org ON suppliers(organization_id)');
+    await db.execute('CREATE INDEX idx_supplier_transactions_supplier ON supplier_transactions(supplier_id)');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle database migrations here
+    if (oldVersion < 2) {
+      // Add POS-related tables
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS sales (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          register_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          customer_id TEXT,
+          receipt_number TEXT NOT NULL,
+          subtotal REAL NOT NULL,
+          tax_amount REAL NOT NULL,
+          discount_amount REAL NOT NULL,
+          total_amount REAL NOT NULL,
+          payment_method TEXT NOT NULL,
+          split_payments TEXT,
+          status TEXT NOT NULL,
+          refund_reason TEXT,
+          is_offline_sale INTEGER DEFAULT 0,
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          synced_at INTEGER,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (register_id) REFERENCES registers (id),
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS sale_items (
+          id TEXT PRIMARY KEY,
+          sale_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          product_name TEXT NOT NULL,
+          variant_id TEXT,
+          quantity REAL NOT NULL,
+          unit_price REAL NOT NULL,
+          discount_amount REAL NOT NULL,
+          discount_percent REAL NOT NULL,
+          tax_amount REAL NOT NULL,
+          tax_percent REAL NOT NULL,
+          total_amount REAL NOT NULL,
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (sale_id) REFERENCES sales (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS registers (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          location TEXT,
+          opening_balance REAL NOT NULL,
+          current_balance REAL NOT NULL,
+          expected_balance REAL NOT NULL,
+          status TEXT NOT NULL,
+          opened_by TEXT NOT NULL,
+          opened_at INTEGER NOT NULL,
+          closed_by TEXT,
+          closed_at INTEGER,
+          denominations TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS register_transactions (
+          id TEXT PRIMARY KEY,
+          register_id TEXT NOT NULL,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          reason TEXT,
+          performed_by TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (register_id) REFERENCES registers (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS receipts (
+          id TEXT PRIMARY KEY,
+          sale_id TEXT NOT NULL,
+          receipt_number TEXT NOT NULL,
+          template TEXT NOT NULL,
+          custom_fields TEXT,
+          format TEXT NOT NULL,
+          is_printed INTEGER DEFAULT 0,
+          printed_at INTEGER,
+          printer_name TEXT,
+          digital_receipt TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (sale_id) REFERENCES sales (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS pos_settings (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          default_register_id TEXT,
+          receipt_template TEXT,
+          tax_inclusive INTEGER DEFAULT 0,
+          enable_customer_display INTEGER DEFAULT 1,
+          enable_quick_keys INTEGER DEFAULT 1,
+          quick_keys TEXT,
+          payment_methods TEXT,
+          print_receipt_default INTEGER DEFAULT 1,
+          email_receipt_default INTEGER DEFAULT 0,
+          barcode_scanning_enabled INTEGER DEFAULT 1,
+          offline_mode_enabled INTEGER DEFAULT 1,
+          sync_interval INTEGER DEFAULT 30,
+          currency TEXT DEFAULT 'USD',
+          decimal_places INTEGER DEFAULT 2,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS customer_credits (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          customer_id TEXT NOT NULL,
+          credit_limit REAL DEFAULT 0,
+          current_balance REAL DEFAULT 0,
+          last_payment_date INTEGER,
+          last_payment_amount REAL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS loyalty_points (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          customer_id TEXT NOT NULL,
+          points_balance INTEGER DEFAULT 0,
+          lifetime_points INTEGER DEFAULT 0,
+          last_earned_date INTEGER,
+          last_redeemed_date INTEGER,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      // Create indexes for POS tables
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sales_org ON sales(organization_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sales_register ON sales(register_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sales_receipt ON sales(receipt_number)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_registers_org ON registers(organization_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_receipts_sale ON receipts(sale_id)');
+    }
+    
+    if (oldVersion < 3) {
+      // Add Purchase Order Management tables
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_orders (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          supplier_id TEXT NOT NULL,
+          po_number TEXT NOT NULL,
+          order_date INTEGER NOT NULL,
+          expected_date INTEGER,
+          status TEXT NOT NULL,
+          total_amount REAL NOT NULL,
+          tax_amount REAL DEFAULT 0,
+          discount_amount REAL DEFAULT 0,
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          created_by TEXT NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_order_items (
+          id TEXT PRIMARY KEY,
+          purchase_order_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          received_quantity REAL DEFAULT 0,
+          unit_price REAL NOT NULL,
+          tax_rate REAL DEFAULT 0,
+          discount_rate REAL DEFAULT 0,
+          total_amount REAL NOT NULL,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id),
+          FOREIGN KEY (product_id) REFERENCES products(id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_bills (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          supplier_id TEXT NOT NULL,
+          purchase_order_id TEXT,
+          bill_number TEXT NOT NULL,
+          bill_date INTEGER NOT NULL,
+          due_date INTEGER,
+          status TEXT NOT NULL,
+          total_amount REAL NOT NULL,
+          paid_amount REAL DEFAULT 0,
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id),
+          FOREIGN KEY (supplier_id) REFERENCES suppliers (id),
+          FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS suppliers (
+          id TEXT PRIMARY KEY,
+          organization_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          code TEXT UNIQUE,
+          email TEXT,
+          phone TEXT,
+          mobile TEXT,
+          website TEXT,
+          tax_number TEXT,
+          address TEXT,
+          city TEXT,
+          state TEXT,
+          country TEXT,
+          postal_code TEXT,
+          payment_terms INTEGER DEFAULT 30,
+          credit_limit REAL DEFAULT 0,
+          current_balance REAL DEFAULT 0,
+          status TEXT DEFAULT 'active',
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (organization_id) REFERENCES organizations (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS supplier_transactions (
+          id TEXT PRIMARY KEY,
+          supplier_id TEXT NOT NULL,
+          transaction_type TEXT NOT NULL,
+          reference_id TEXT,
+          amount REAL NOT NULL,
+          balance REAL NOT NULL,
+          transaction_date INTEGER NOT NULL,
+          notes TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
+        )
+      ''');
+
+      // Create indexes for Purchase Order tables
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_purchase_orders_org ON purchase_orders(organization_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_purchase_orders_supplier ON purchase_orders(supplier_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_purchase_order_items_po ON purchase_order_items(purchase_order_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_purchase_bills_org ON purchase_bills(organization_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_purchase_bills_supplier ON purchase_bills(supplier_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_suppliers_org ON suppliers(organization_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier ON supplier_transactions(supplier_id)');
+    }
   }
 
   // User operations
@@ -474,6 +1027,39 @@ class AppDatabase {
   Future<void> removeSyncItem(int id) async {
     final db = await database;
     await db.delete('sync_queue', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Alias for getSyncQueue for compatibility
+  Future<List<Map<String, dynamic>>> getSyncQueue() async {
+    return await getPendingSyncItems();
+  }
+
+  // Remove sync queue item
+  Future<void> removeSyncQueueItem(int id) async {
+    return await removeSyncItem(id);
+  }
+
+  // Update sync queue item
+  Future<void> updateSyncQueueItem(int id, Map<String, dynamic> updates) async {
+    final db = await database;
+    await db.update('sync_queue', updates, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Clear failed sync items
+  Future<void> clearFailedSyncItems() async {
+    final db = await database;
+    await db.delete('sync_queue', where: 'retry_count >= ?', whereArgs: [3]);
+  }
+
+  // Reset failed sync items
+  Future<void> resetFailedSyncItems() async {
+    final db = await database;
+    await db.update(
+      'sync_queue',
+      {'retry_count': 0},
+      where: 'retry_count >= ?',
+      whereArgs: [3],
+    );
   }
 
   // Analytics queries

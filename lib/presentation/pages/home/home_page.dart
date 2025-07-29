@@ -46,6 +46,16 @@ class _HomePageState extends ConsumerState<HomePage> {
         body: const AnalyticsPage(),
       ),
       _NavigationItem(
+        icon: Icons.business,
+        label: 'Suppliers',
+        onTap: () => context.go(AppRouter.suppliers),
+      ),
+      _NavigationItem(
+        icon: Icons.point_of_sale,
+        label: 'POS',
+        onTap: () => context.go(AppRouter.pos),
+      ),
+      _NavigationItem(
         icon: Icons.person,
         label: 'Profile',
         body: const _ProfileView(),
@@ -113,14 +123,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: _navigationItems.map((item) => item.body).toList(),
+        children: _navigationItems.map((item) => item.body ?? Container()).toList(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          final item = _navigationItems[index];
+          if (item.onTap != null) {
+            item.onTap!();
+          } else {
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
         },
         type: BottomNavigationBarType.fixed,
         items: _navigationItems
@@ -137,13 +152,15 @@ class _HomePageState extends ConsumerState<HomePage> {
 class _NavigationItem {
   final IconData icon;
   final String label;
-  final Widget body;
+  final Widget? body;
+  final VoidCallback? onTap;
 
   _NavigationItem({
     required this.icon,
     required this.label,
-    required this.body,
-  });
+    this.body,
+    this.onTap,
+  }) : assert(body != null || onTap != null, 'Either body or onTap must be provided');
 }
 
 class _DashboardView extends ConsumerWidget {

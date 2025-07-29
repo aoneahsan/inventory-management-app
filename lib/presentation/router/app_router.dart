@@ -15,6 +15,11 @@ import '../pages/home/home_page.dart';
 import '../pages/splash/splash_page.dart';
 import '../pages/onboarding/onboarding_page.dart';
 import '../pages/onboarding/feature_tour_page.dart';
+import '../pages/pos/pos_main_page.dart';
+import '../pages/pos/checkout_page.dart';
+import '../pages/pos/pos_reports_page.dart';
+import '../pages/suppliers/suppliers_page.dart';
+import '../pages/suppliers/supplier_form_page.dart';
 import 'router_notifier.dart';
 
 class AppRouter {
@@ -28,6 +33,14 @@ class AppRouter {
   static const String home = '/home';
   static const String onboarding = '/onboarding';
   static const String featureTour = '/feature-tour';
+  static const String pos = '/pos';
+  static const String posCheckout = '/pos/checkout';
+  static const String posRegister = '/pos/register';
+  static const String posReports = '/pos/reports';
+  static const String suppliers = '/suppliers';
+  static const String supplierDetails = '/suppliers/:id';
+  static const String supplierNew = '/suppliers/new';
+  static const String supplierEdit = '/suppliers/:id/edit';
 
   static GoRouter router(Ref ref) {
     final routerNotifier = ref.watch(routerNotifierProvider);
@@ -118,6 +131,41 @@ class AppRouter {
               },
             ),
           ],
+        ),
+        // POS routes
+        GoRoute(
+          path: pos,
+          name: 'pos',
+          builder: (context, state) => const POSMainPage(),
+        ),
+        GoRoute(
+          path: posCheckout,
+          name: 'posCheckout',
+          builder: (context, state) => const CheckoutPage(),
+        ),
+        GoRoute(
+          path: posReports,
+          name: 'posReports',
+          builder: (context, state) => const POSReportsPage(),
+        ),
+        // Supplier routes
+        GoRoute(
+          path: suppliers,
+          name: 'suppliers',
+          builder: (context, state) => const SuppliersPage(),
+        ),
+        GoRoute(
+          path: supplierNew,
+          name: 'supplierNew',
+          builder: (context, state) => const SupplierFormPage(),
+        ),
+        GoRoute(
+          path: supplierEdit,
+          name: 'supplierEdit',
+          builder: (context, state) {
+            final supplierId = state.pathParameters['id']!;
+            return SupplierFormPage(supplierId: supplierId);
+          },
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

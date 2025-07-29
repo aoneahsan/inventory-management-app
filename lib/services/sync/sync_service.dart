@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/errors/exceptions.dart';
 import '../database/database.dart';
+import '../../domain/entities/sale.dart';
+import '../../domain/entities/register.dart';
 
 enum SyncStatus {
   idle,
@@ -111,6 +113,12 @@ class SyncService {
           break;
         case 'users':
           await _syncUser(operation, recordId, data);
+          break;
+        case 'sales':
+          await _syncSale(operation, recordId, data);
+          break;
+        case 'register_transactions':
+          await _syncRegisterTransaction(operation, recordId, data);
           break;
         default:
           throw BusinessException(message: 'Unknown table for sync: $tableName');
@@ -243,6 +251,50 @@ class SyncService {
     } catch (e) {
       throw BusinessException(message: 'Failed to get sync stats: $e');
     }
+  }
+
+  // Sync sale to Firestore
+  Future<void> _syncSale(String operation, String recordId, Map<String, dynamic> data) async {
+    switch (operation) {
+      case 'create':
+        await _firestore.collection('sales').doc(recordId).set(data);
+        break;
+      case 'update':
+        await _firestore.collection('sales').doc(recordId).update(data);
+        break;
+      case 'delete':
+        await _firestore.collection('sales').doc(recordId).delete();
+        break;
+    }
+  }
+
+  // Sync register transaction to Firestore
+  Future<void> _syncRegisterTransaction(String operation, String recordId, Map<String, dynamic> data) async {
+    switch (operation) {
+      case 'create':
+        await _firestore.collection('register_transactions').doc(recordId).set(data);
+        break;
+      case 'update':
+        await _firestore.collection('register_transactions').doc(recordId).update(data);
+        break;
+      case 'delete':
+        await _firestore.collection('register_transactions').doc(recordId).delete();
+        break;
+    }
+  }
+
+  // Public methods for offline POS service
+  Future<void> syncSale(Sale sale) async {
+    await _syncSale('create', sale.id, sale.toJson());
+  }
+
+  Future<void> syncRegisterTransaction(RegisterTransaction transaction) async {
+    await _syncRegisterTransaction('create', transaction.id, transaction.toJson());
+  }
+
+  // Queue item for sync
+  Future<void> queueForSync(String tableName, String operation, String recordId, Map<String, dynamic> data) async {
+    await _database.addToSyncQueue(tableName, operation, recordId, data);
   }
 
   // Clear failed sync items
