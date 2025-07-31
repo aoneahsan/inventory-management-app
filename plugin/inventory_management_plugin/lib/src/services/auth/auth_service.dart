@@ -241,7 +241,7 @@ class AuthService {
   Future<void> _loadOrganization(String organizationId) async {
     // This would typically load from database or API
     // For now, we'll use the adapter if it supports organization data
-    final result = await adapter.getOrganization?call(organizationId);
+    final result = await adapter.getOrganization?.call(organizationId);
     if (result != null && result['organization'] != null) {
       _currentOrganization = Organization.fromJson(result['organization']);
     }
