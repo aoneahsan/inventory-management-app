@@ -6,7 +6,7 @@ import '../../../services/purchase/purchase_order_service.dart';
 import '../../../services/purchase/supplier_service.dart';
 import '../../../services/database/database.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../widgets/common/search_bar.dart' as app;
+// Removed non-existent search_bar import
 import '../../providers/auth_provider.dart';
 
 final purchaseOrderServiceProvider = Provider<PurchaseOrderService>((ref) {
@@ -56,7 +56,7 @@ final filteredPurchaseOrdersProvider = Provider.family<List<PurchaseOrder>, Stri
         return filtered;
       },
       loading: () => [],
-      error: (_, __) => [],
+      error: (_, _) => [],
     );
   },
 );
@@ -66,10 +66,11 @@ class PurchaseOrdersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value;
-    if (user == null) return const SizedBox();
+    final user = ref.watch(currentUserProvider);
+    final currentOrg = ref.watch(currentOrganizationProvider);
+    if (user == null || currentOrg == null) return const SizedBox();
 
-    final organizationId = user.organizationId!;
+    final organizationId = currentOrg.id;
     final orders = ref.watch(filteredPurchaseOrdersProvider(organizationId));
     final ordersAsync = ref.watch(purchaseOrdersProvider(organizationId));
 
@@ -94,8 +95,15 @@ class PurchaseOrdersPage extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: app.SearchBar(
-                        hintText: 'Search purchase orders...',
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search purchase orders...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
                         onChanged: (value) {
                           ref.read(purchaseOrderSearchQueryProvider.notifier).state = value;
                         },
@@ -120,7 +128,7 @@ class PurchaseOrdersPage extends ConsumerWidget {
                         label: 'All',
                         value: null,
                         selectedValue: ref.watch(purchaseOrderStatusFilterProvider),
-                        onSelected: (value) {
+                        onSelected: () {
                           ref.read(purchaseOrderStatusFilterProvider.notifier).state = null;
                         },
                       ),
@@ -129,7 +137,7 @@ class PurchaseOrdersPage extends ConsumerWidget {
                         label: 'Draft',
                         value: 'draft',
                         selectedValue: ref.watch(purchaseOrderStatusFilterProvider),
-                        onSelected: (value) {
+                        onSelected: () {
                           ref.read(purchaseOrderStatusFilterProvider.notifier).state = 'draft';
                         },
                       ),
@@ -138,7 +146,7 @@ class PurchaseOrdersPage extends ConsumerWidget {
                         label: 'Sent',
                         value: 'sent',
                         selectedValue: ref.watch(purchaseOrderStatusFilterProvider),
-                        onSelected: (value) {
+                        onSelected: () {
                           ref.read(purchaseOrderStatusFilterProvider.notifier).state = 'sent';
                         },
                       ),
@@ -147,7 +155,7 @@ class PurchaseOrdersPage extends ConsumerWidget {
                         label: 'Partial',
                         value: 'partial',
                         selectedValue: ref.watch(purchaseOrderStatusFilterProvider),
-                        onSelected: (value) {
+                        onSelected: () {
                           ref.read(purchaseOrderStatusFilterProvider.notifier).state = 'partial';
                         },
                       ),
@@ -156,7 +164,7 @@ class PurchaseOrdersPage extends ConsumerWidget {
                         label: 'Received',
                         value: 'received',
                         selectedValue: ref.watch(purchaseOrderStatusFilterProvider),
-                        onSelected: (value) {
+                        onSelected: () {
                           ref.read(purchaseOrderStatusFilterProvider.notifier).state = 'received';
                         },
                       ),
@@ -177,7 +185,7 @@ class PurchaseOrdersPage extends ConsumerWidget {
                         Icon(
                           Icons.receipt_long,
                           size: 64,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -338,7 +346,7 @@ class _PurchaseOrderCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(order.status).withOpacity(0.1),
+                      color: _getStatusColor(order.status).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -358,13 +366,13 @@ class _PurchaseOrderCard extends StatelessWidget {
                   Icon(
                     Icons.calendar_today,
                     size: 16,
-                    color: AppColors.textSecondary,
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     'Order Date: ${_formatDate(order.orderDate)}',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: theme.textTheme.bodySmall?.color,
                       fontSize: 14,
                     ),
                   ),
@@ -373,13 +381,13 @@ class _PurchaseOrderCard extends StatelessWidget {
                     Icon(
                       Icons.local_shipping,
                       size: 16,
-                      color: AppColors.textSecondary,
+                      color: theme.textTheme.bodySmall?.color,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Expected: ${_formatDate(order.expectedDate!)}',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: theme.textTheme.bodySmall?.color,
                         fontSize: 14,
                       ),
                     ),
@@ -393,7 +401,7 @@ class _PurchaseOrderCard extends StatelessWidget {
                   Text(
                     '${order.items.length} items',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: theme.textTheme.bodySmall?.color,
                       fontSize: 14,
                     ),
                   ),
@@ -419,7 +427,7 @@ class _PurchaseOrderCard extends StatelessWidget {
                 Text(
                   '${order.receivePercentage.toStringAsFixed(0)}% received',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: theme.textTheme.bodySmall?.color,
                     fontSize: 12,
                   ),
                 ),

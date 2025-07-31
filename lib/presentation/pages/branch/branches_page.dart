@@ -169,7 +169,7 @@ class _BranchesPageState extends ConsumerState<BranchesPage> {
       );
       ref.invalidate(branchesProvider);
       
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -179,7 +179,7 @@ class _BranchesPageState extends ConsumerState<BranchesPage> {
         );
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );

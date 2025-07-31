@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/purchase_order.dart';
-import '../../../services/purchase/purchase_order_service.dart';
-import '../../providers/auth_provider.dart';
+// Removed unused imports
 import '../purchase_orders/purchase_orders_page.dart';
 
 final purchaseOrderProvider = FutureProvider.family<PurchaseOrder?, String>((ref, orderId) async {
   final service = ref.watch(purchaseOrderServiceProvider);
-  return await service.getPurchaseOrder(orderId);
+  return await service.getPurchaseOrderById(orderId);
 });
 
 class PurchaseOrderDetailsPage extends ConsumerWidget {
@@ -88,7 +87,7 @@ class PurchaseOrderDetailsPage extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox(),
-            error: (_, __) => const SizedBox(),
+            error: (_, _) => const SizedBox(),
           ),
         ],
       ),
@@ -344,7 +343,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(

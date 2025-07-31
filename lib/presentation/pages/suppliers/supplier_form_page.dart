@@ -51,7 +51,7 @@ class SupplierFormNotifier extends StateNotifier<SupplierFormState> {
     String? taxNumber,
     String? address,
     String? city,
-    String? state,
+    String? stateProvince,
     String? country,
     String? postalCode,
     required int paymentTerms,
@@ -73,7 +73,7 @@ class SupplierFormNotifier extends StateNotifier<SupplierFormState> {
           'tax_number': taxNumber,
           'address': address,
           'city': city,
-          'state': state,
+          'state': stateProvince,
           'country': country,
           'postal_code': postalCode,
           'payment_terms': paymentTerms,
@@ -94,7 +94,7 @@ class SupplierFormNotifier extends StateNotifier<SupplierFormState> {
           taxNumber: taxNumber,
           address: address,
           city: city,
-          state: state,
+          state: stateProvince,
           country: country,
           postalCode: postalCode,
           paymentTerms: paymentTerms,
@@ -194,11 +194,12 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
   Future<void> _saveSupplier() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) return;
+    final user = ref.read(currentUserProvider);
+    final currentOrg = ref.read(currentOrganizationProvider);
+    if (user == null || currentOrg == null) return;
 
     final success = await ref.read(supplierFormProvider.notifier).saveSupplier(
-      organizationId: user.organizationId!,
+      organizationId: currentOrg.id,
       name: _nameController.text,
       code: _codeController.text.isEmpty ? null : _codeController.text,
       email: _emailController.text.isEmpty ? null : _emailController.text,
@@ -208,7 +209,7 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
       taxNumber: _taxNumberController.text.isEmpty ? null : _taxNumberController.text,
       address: _addressController.text.isEmpty ? null : _addressController.text,
       city: _cityController.text.isEmpty ? null : _cityController.text,
-      state: _stateController.text.isEmpty ? null : _stateController.text,
+      stateProvince: _stateController.text.isEmpty ? null : _stateController.text,
       country: _countryController.text.isEmpty ? null : _countryController.text,
       postalCode: _postalCodeController.text.isEmpty ? null : _postalCodeController.text,
       paymentTerms: int.tryParse(_paymentTermsController.text) ?? 30,
@@ -261,7 +262,7 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
                         labelText: 'Supplier Name *',
                         prefixIcon: Icon(Icons.business),
                       ),
-                      validator: Validators.required('Supplier name is required'),
+                      validator: (value) => Validators.required(value, fieldName: 'Supplier name'),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -284,7 +285,7 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
                             ),
                             validator: (value) {
                               if (value != null && value.isNotEmpty) {
-                                return Validators.email('Invalid email')(value);
+                                return Validators.email(value);
                               }
                               return null;
                             },
@@ -313,7 +314,7 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
                               prefixIcon: Icon(Icons.calendar_today),
                             ),
                             keyboardType: TextInputType.number,
-                            validator: Validators.required('Payment terms required'),
+                            validator: (value) => Validators.required(value, fieldName: 'Payment terms'),
                           ),
                         ),
                         const SizedBox(width: 16),

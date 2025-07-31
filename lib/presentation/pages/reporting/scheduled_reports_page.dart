@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../domain/entities/scheduled_report.dart';
 import '../../../services/reporting/scheduled_report_service.dart';
 import '../../providers/organization_provider.dart';
@@ -245,6 +244,8 @@ class ScheduledReportsPage extends ConsumerWidget {
         return Icons.calendar_today;
       case ReportType.custom:
         return Icons.analytics;
+      case ReportType.financial:
+        return Icons.attach_money;
     }
   }
 
@@ -481,6 +482,8 @@ class _ScheduledReportDialogState extends State<_ScheduledReportDialog> {
         return Icons.calendar_today;
       case ReportType.custom:
         return Icons.analytics;
+      case ReportType.financial:
+        return Icons.attach_money;
     }
   }
 }

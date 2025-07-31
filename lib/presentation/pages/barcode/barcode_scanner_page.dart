@@ -12,7 +12,7 @@ class BarcodeScannerPage extends StatefulWidget {
 class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   // Uncomment when mobile_scanner is enabled
   // late MobileScannerController controller;
-  bool _hasScanned = false;
+  // Field removed as it's not used with mobile_scanner commented out
 
   @override
   void initState() {
@@ -31,12 +31,13 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
     super.dispose();
   }
 
-  void _onDetect(String barcode) {
-    if (!_hasScanned) {
-      _hasScanned = true;
-      Navigator.of(context).pop(barcode);
-    }
-  }
+  // Uncomment when mobile_scanner is enabled
+  // void _onDetect(String barcode) {
+  //   if (!_hasScanned) {
+  //     _hasScanned = true;
+  //     Navigator.of(context).pop(barcode);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +91,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           // Overlay with scanning frame
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
             child: Stack(
               children: [

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../domain/entities/repackaging_rule.dart';
 import '../../../services/inventory/repackaging_service.dart';
 import '../../providers/organization_provider.dart';

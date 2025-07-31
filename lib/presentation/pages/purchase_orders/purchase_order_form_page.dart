@@ -1,14 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../domain/entities/supplier.dart';
-import '../../../domain/entities/product.dart';
-import '../../../domain/entities/purchase_order.dart';
-import '../../../services/purchase/purchase_order_service.dart';
-import '../../../services/purchase/supplier_service.dart';
-import '../../../services/inventory/product_service.dart';
 import '../../providers/auth_provider.dart';
-import '../purchase_orders/purchase_orders_page.dart';
 
 class PurchaseOrderFormPage extends ConsumerStatefulWidget {
   final String? purchaseOrderId;
@@ -53,7 +46,7 @@ class _PurchaseOrderFormPageState extends ConsumerState<PurchaseOrderFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider).value;
+    final user = ref.watch(currentUserProvider);
     if (user == null) return const SizedBox();
 
     return Scaffold(

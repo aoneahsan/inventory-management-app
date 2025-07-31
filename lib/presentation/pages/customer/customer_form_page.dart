@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../domain/entities/customer.dart';
-import '../../../services/customer/customer_service.dart';
+// Removed unused import: '../../../domain/entities/customer.dart'
 import '../../../core/errors/exceptions.dart';
 import '../../providers/auth_provider.dart';
 import 'customers_page.dart';
@@ -32,7 +31,6 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
   String _customerType = 'retail';
   bool _isLoading = false;
   bool _useAddressForShipping = true;
-  Customer? _existingCustomer;
 
   @override
   void initState() {
@@ -50,7 +48,6 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
       
       if (customer != null) {
         setState(() {
-          _existingCustomer = customer;
           _nameController.text = customer.name;
           _codeController.text = customer.code ?? '';
           _emailController.text = customer.email ?? '';

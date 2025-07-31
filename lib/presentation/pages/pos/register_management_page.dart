@@ -213,8 +213,8 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
               }
               
               final balance = double.tryParse(balanceController.text) ?? 0;
+              Navigator.pop(context);
               await _openRegister(nameController.text, balance);
-              if (mounted) Navigator.pop(context);
             },
             child: const Text('Open'),
           ),
@@ -271,7 +271,7 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
                     ),
                   ],
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),
@@ -290,8 +290,8 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
                 }
               });
               
+              Navigator.pop(context);
               await _closeRegister(register.id, denominations);
-              if (mounted) Navigator.pop(context);
             },
             child: const Text('Close Register'),
           ),
@@ -306,14 +306,19 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
 
   Future<void> _openRegister(String name, double openingBalance) async {
     try {
-      final authState = ref.read(currentOrganizationProvider);
+      final organization = ref.read(currentOrganizationProvider);
+      final user = ref.read(currentUserProvider);
       final registerService = ref.read(registerServiceProvider);
       
+      if (organization == null || user == null) {
+        throw Exception('No organization or user found');
+      }
+      
       await registerService.openRegister(
-        organizationId: authState.organization!.id,
+        organizationId: organization.id,
         name: name,
         openingBalance: openingBalance,
-        userId: authState.user!.id,
+        userId: user.id,
       );
       
       await _loadRegisters();
@@ -334,12 +339,16 @@ class _RegisterManagementPageState extends ConsumerState<RegisterManagementPage>
 
   Future<void> _closeRegister(String registerId, Map<String, int> denominations) async {
     try {
-      final authState = ref.read(currentOrganizationProvider);
+      final user = ref.read(currentUserProvider);
       final registerService = ref.read(registerServiceProvider);
+      
+      if (user == null) {
+        throw Exception('No user found');
+      }
       
       await registerService.closeRegister(
         registerId: registerId,
-        userId: authState.user!.id,
+        userId: user.id,
         denominations: denominations,
       );
       

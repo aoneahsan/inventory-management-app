@@ -123,7 +123,7 @@ class CommunicationTemplatesPage extends ConsumerWidget {
           ...templates.map((template) => ListTile(
             leading: CircleAvatar(
               backgroundColor: template.isActive
-                  ? color.withOpacity(0.1)
+                  ? color.withValues(alpha: 0.1)
                   : Colors.grey.shade200,
               child: Icon(
                 _getTriggerIcon(template.triggerEvent),
@@ -221,7 +221,7 @@ class CommunicationTemplatesPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -246,7 +246,7 @@ class CommunicationTemplatesPage extends ConsumerWidget {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: (template.variables ?? []).map((variable) => Chip(
+                children: template.variables.map((variable) => Chip(
                   label: Text(
                     '{$variable}',
                     style: const TextStyle(fontSize: 12),

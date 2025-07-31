@@ -5,7 +5,7 @@ import '../../../domain/entities/supplier.dart';
 import '../../../services/purchase/supplier_service.dart';
 import '../../../services/database/database.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../widgets/common/search_bar.dart' as app;
+// Removed non-existent search_bar import
 import '../../providers/auth_provider.dart';
 
 final supplierServiceProvider = Provider<SupplierService>((ref) {

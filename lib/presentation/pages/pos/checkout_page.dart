@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/pos_settings.dart';
 import '../../../domain/entities/register.dart';
-import '../../../services/pos/pos_service.dart';
 import '../../../services/pos/register_service.dart';
 import '../../../services/database/database.dart';
 import '../../../services/sync/sync_service.dart';
@@ -36,7 +35,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     final posService = ref.watch(posServiceProvider);
-    final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -151,7 +149,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               color: Theme.of(context).cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(-2, 0),
                 ),
@@ -256,7 +254,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
               : Theme.of(context).cardColor,
           border: Border.all(
             color: isSelected
@@ -330,9 +328,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       final currentOrg = ref.read(currentOrganizationProvider);
       final registerService = ref.read(registerServiceProvider);
       
+      if (currentOrg == null || currentUser == null) {
+        throw Exception('Organization or user not found');
+      }
+      
       // Get open register
       final registers = await registerService.getOpenRegisters(
-        currentOrg!.id,
+        currentOrg.id,
       );
       
       if (registers.isEmpty) {
@@ -341,9 +343,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
       // Process the sale
       final sale = await posService.processSale(
-        organizationId: currentOrg!.id,
+        organizationId: currentOrg.id,
         registerId: registers.first.id,
-        userId: currentUser!.id,
+        userId: currentUser.id,
         paymentMethod: _selectedPaymentMethod,
         splitPayments: _splitPayments.isNotEmpty ? _splitPayments : null,
       );
@@ -353,7 +355,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         registerId: registers.first.id,
         type: RegisterTransactionType.sale,
         amount: sale.totalAmount,
-        performedBy: currentUser!.id,
+        performedBy: currentUser.id,
       );
 
       if (mounted) {
