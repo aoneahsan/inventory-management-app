@@ -156,8 +156,39 @@ class CommunicationTemplatesPage extends ConsumerWidget {
             ),
             trailing: Switch(
               value: template.isActive,
-              onChanged: (value) {
-                // TODO: Toggle template status
+              onChanged: (value) async {
+                try {
+                  final service = CommunicationService();
+                  final organizationId = ref.read(currentOrganizationIdProvider);
+                  if (organizationId == null) return;
+                  
+                  await service.updateTemplate(
+                    organizationId: organizationId,
+                    templateId: template.id,
+                    isActive: value,
+                  );
+                  
+                  ref.invalidate(communicationTemplatesProvider);
+                  
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Template ${value ? 'activated' : 'deactivated'}',
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error updating template: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
             ),
             onTap: () => _showTemplatePreview(context, template),
@@ -263,14 +294,247 @@ class CommunicationTemplatesPage extends ConsumerWidget {
             child: const Text('Close'),
           ),
           FilledButton.icon(
-            onPressed: () {
-              // TODO: Test template
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _sendTestTemplate(context, ref, template);
             },
             icon: const Icon(Icons.send),
             label: const Text('Send Test'),
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _sendTestTemplate(BuildContext context, WidgetRef ref, CommunicationTemplate template) async {
+    // Show dialog to get test recipient
+    final recipient = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => _TestTemplateDialog(
+        channel: template.channel,
+      ),
+    );
+
+    if (recipient != null) {
+      try {
+        final service = CommunicationService();
+        final organizationId = ref.read(currentOrganizationIdProvider);
+        if (organizationId == null) return;
+
+        // Prepare test data with sample variables
+        final testData = {
+          'customer_name': 'John Doe',
+          'order_id': 'TEST-12345',
+          'order_total': '\$99.99',
+          'product_name': 'Sample Product',
+          'quantity': '2',
+          'tracking_number': 'TEST-TRACK-123',
+        };
+
+        // Replace variables in content
+        String processedContent = template.content;
+        testData.forEach((key, value) {
+          processedContent = processedContent.replaceAll('{$key}', value);
+        });
+
+        // Send test message
+        switch (template.channel) {
+          case CommunicationChannel.sms:
+            await service.sendSMS(
+              organizationId: organizationId,
+              recipientId: 'test',
+              recipientType: 'test',
+              message: processedContent,
+              metadata: {
+                'templateId': template.id,
+                'templateName': template.name,
+                'isTest': true,
+                'phone': recipient['phone'],
+              },
+            );
+            break;
+          case CommunicationChannel.email:
+            String processedSubject = template.subject ?? 'Test Email';
+            testData.forEach((key, value) {
+              processedSubject = processedSubject.replaceAll('{$key}', value);
+            });
+            
+            await service.sendEmail(
+              organizationId: organizationId,
+              recipientId: 'test',
+              recipientType: 'test',
+              subject: processedSubject,
+              body: processedContent,
+              metadata: {
+                'templateId': template.id,
+                'templateName': template.name,
+                'isTest': true,
+                'email': recipient['email'],
+              },
+            );
+            break;
+          case CommunicationChannel.whatsapp:
+            await service.sendWhatsApp(
+              organizationId: organizationId,
+              recipientId: 'test',
+              recipientType: 'test',
+              message: processedContent,
+              metadata: {
+                'templateId': template.id,
+                'templateName': template.name,
+                'isTest': true,
+                'phone': recipient['phone'],
+              },
+            );
+            break;
+        }
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Test ${template.channel.displayName} sent successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error sending test: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+}
+
+class _TestTemplateDialog extends StatefulWidget {
+  final CommunicationChannel channel;
+
+  const _TestTemplateDialog({
+    required this.channel,
+  });
+
+  @override
+  State<_TestTemplateDialog> createState() => _TestTemplateDialogState();
+}
+
+class _TestTemplateDialogState extends State<_TestTemplateDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Send Test ${widget.channel.displayName}'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter recipient details for test message',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            if (widget.channel == CommunicationChannel.email)
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email Address',
+                  hintText: 'test@example.com',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter email address';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter valid email';
+                  }
+                  return null;
+                },
+              )
+            else
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  hintText: widget.channel == CommunicationChannel.whatsapp
+                      ? '+1234567890'
+                      : '1234567890',
+                  prefixIcon: const Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter phone number';
+                  }
+                  return null;
+                },
+              ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.blue.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Test message will use sample data for variables',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              Navigator.of(context).pop({
+                if (widget.channel == CommunicationChannel.email)
+                  'email': _emailController.text
+                else
+                  'phone': _phoneController.text,
+              });
+            }
+          },
+          child: const Text('Send Test'),
+        ),
+      ],
     );
   }
 }
@@ -452,15 +716,74 @@ class _TemplateDialogState extends State<_TemplateDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () {
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              // TODO: Create template
-              Navigator.of(context).pop();
+              await _createTemplate(context);
             }
           },
           child: const Text('Create'),
         ),
       ],
     );
+  }
+
+  Future<void> _createTemplate(BuildContext context) async {
+    try {
+      // Extract variables from content
+      final variablePattern = RegExp(r'\{([^}]+)\}');
+      final matches = variablePattern.allMatches(_contentController.text);
+      final variables = matches.map((m) => m.group(1)!).toSet().toList();
+
+      final template = CommunicationTemplate(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        organizationId: '', // Will be set by service
+        name: _nameController.text.trim(),
+        channel: _selectedChannel,
+        triggerEvent: _selectedTrigger,
+        subject: _selectedChannel == CommunicationChannel.email
+            ? _subjectController.text.trim()
+            : null,
+        content: _contentController.text.trim(),
+        variables: variables,
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      // Get the current context's WidgetRef
+      final container = ProviderScope.containerOf(context);
+      final organizationId = container.read(currentOrganizationIdProvider);
+      if (organizationId == null) {
+        throw Exception('No organization selected');
+      }
+
+      final service = CommunicationService();
+      await service.createTemplate(
+        organizationId: organizationId,
+        template: template,
+      );
+
+      if (context.mounted) {
+        // Refresh the templates list
+        container.invalidate(communicationTemplatesProvider);
+        
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Template created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating template: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

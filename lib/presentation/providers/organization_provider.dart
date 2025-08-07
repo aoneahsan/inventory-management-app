@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../services/auth/auth_service.dart';
 import 'auth_provider.dart';
 
 final currentOrganizationIdProvider = Provider<String?>((ref) {

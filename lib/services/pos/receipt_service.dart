@@ -84,10 +84,10 @@ class ReceiptService {
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
-                    if (organization.settings?['address'] != null)
-                      pw.Text(organization.settings!['address']),
-                    if (organization.settings?['phone'] != null)
-                      pw.Text('Tel: ${organization.settings!['phone']}'),
+                    if (organization.settings['address'] != null)
+                      pw.Text(organization.settings['address']),
+                    if (organization.settings['phone'] != null)
+                      pw.Text('Tel: ${organization.settings['phone']}'),
                     pw.SizedBox(height: 10),
                     pw.Text(
                       'Receipt #${receipt.receiptNumber}',

@@ -1,14 +1,12 @@
 import 'dart:convert';
 import '../../domain/entities/sale.dart';
 import '../../domain/entities/product.dart';
-import '../../domain/entities/customer.dart';
 import '../../domain/entities/pos_settings.dart';
 import '../../core/errors/exceptions.dart';
 import '../database/database.dart';
 import '../inventory/product_service.dart';
 import '../sync/sync_service.dart';
 import 'offline_pos_service.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 
 class POSService {
   final AppDatabase _database;

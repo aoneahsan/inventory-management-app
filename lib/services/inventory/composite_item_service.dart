@@ -1,6 +1,4 @@
-import 'dart:convert';
 import '../../domain/entities/composite_item.dart';
-import '../../domain/entities/product.dart';
 import '../database/database.dart';
 import '../branch/branch_service.dart';
 import '../sync/sync_service.dart';

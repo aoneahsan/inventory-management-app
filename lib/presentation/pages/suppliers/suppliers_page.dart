@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/supplier.dart';
 import '../../../services/purchase/supplier_service.dart';
 import '../../../services/database/database.dart';
-import '../../../core/theme/app_theme.dart';
 // Removed non-existent search_bar import
 import '../../providers/auth_provider.dart';
 
@@ -39,7 +38,7 @@ final filteredSuppliersProvider = Provider.family<List<Supplier>, String>(
         }).toList();
       },
       loading: () => [],
-      error: (_, __) => [],
+      error: (_, _) => [],
     );
   },
 );
@@ -221,7 +220,7 @@ class _SupplierCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
+                              color: Colors.orange.withValues(alpha: 0.1 * 255),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(

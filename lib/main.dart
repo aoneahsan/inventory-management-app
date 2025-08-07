@@ -7,7 +7,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'package:sqflite_common/sqflite.dart';
+import 'package:sqflite/sqflite.dart';
 import 'firebase_options.dart';
 import 'core/config/app_config.dart';
 import 'services/permissions/permission_service.dart';

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/repackaging_rule.dart';
+import '../../../domain/entities/product.dart';
 import '../../../services/inventory/repackaging_service.dart';
+import '../../../services/inventory/product_service.dart';
+import '../../../services/branch/branch_service.dart';
 import '../../providers/organization_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../inventory/products_page.dart';
 
 final repackagingRulesProvider = FutureProvider.autoDispose<List<RepackagingRule>>((ref) async {
   final organizationId = ref.watch(currentOrganizationIdProvider);
@@ -117,8 +122,38 @@ class RepackagingPage extends ConsumerWidget {
                     children: [
                       Switch(
                         value: rule.isActive,
-                        onChanged: (value) {
-                          // TODO: Toggle rule status
+                        onChanged: (value) async {
+                          try {
+                            final service = RepackagingService();
+                            final organizationId = ref.read(currentOrganizationIdProvider);
+                            if (organizationId == null) return;
+                            
+                            await service.updateRepackagingRule(
+                              rule.id,
+                              rule.copyWith(isActive: value),
+                            );
+                            
+                            ref.invalidate(repackagingRulesProvider);
+                            
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Rule ${value ? 'activated' : 'deactivated'}',
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error updating rule: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
                         },
                       ),
                       Text(
@@ -171,6 +206,16 @@ class _RepackagingRuleDialogState extends State<_RepackagingRuleDialog> {
   final _nameController = TextEditingController();
   final _conversionFactorController = TextEditingController();
   bool _requiresApproval = false;
+  Product? _fromProduct;
+  Product? _toProduct;
+  List<Product> _products = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
 
   @override
   void dispose() {
@@ -179,8 +224,35 @@ class _RepackagingRuleDialogState extends State<_RepackagingRuleDialog> {
     super.dispose();
   }
 
+  Future<void> _loadProducts() async {
+    try {
+      final container = ProviderScope.containerOf(context);
+      final organizationId = container.read(currentOrganizationIdProvider);
+      if (organizationId == null) return;
+
+      final productService = container.read(productServiceProvider);
+      final products = await productService.getProducts(organizationId);
+      
+      setState(() {
+        _products = products;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const AlertDialog(
+        content: SizedBox(
+          height: 100,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return AlertDialog(
       title: const Text('New Repackaging Rule'),
       content: SingleChildScrollView(
@@ -203,21 +275,71 @@ class _RepackagingRuleDialogState extends State<_RepackagingRuleDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              // TODO: Add product dropdowns
-              const TextField(
-                decoration: InputDecoration(
-                  labelText: 'From Product',
+              DropdownButtonFormField<Product>(
+                value: _fromProduct,
+                decoration: const InputDecoration(
+                  labelText: 'From Product*',
                   hintText: 'Select bulk product',
                 ),
-                enabled: false,
+                items: _products.map((product) {
+                  return DropdownMenuItem(
+                    value: product,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(product.name),
+                        Text(
+                          'SKU: ${product.sku} | Stock: ${product.currentStock}',
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _fromProduct = value);
+                },
+                validator: (value) {
+                  if (value == null) return 'Please select from product';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
-              const TextField(
-                decoration: InputDecoration(
-                  labelText: 'To Product',
+              DropdownButtonFormField<Product>(
+                value: _toProduct,
+                decoration: const InputDecoration(
+                  labelText: 'To Product*',
                   hintText: 'Select unit product',
                 ),
-                enabled: false,
+                items: _products
+                    .where((p) => p.id != _fromProduct?.id)
+                    .map((product) {
+                  return DropdownMenuItem(
+                    value: product,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(product.name),
+                        Text(
+                          'SKU: ${product.sku} | Stock: ${product.currentStock}',
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _toProduct = value);
+                },
+                validator: (value) {
+                  if (value == null) return 'Please select to product';
+                  if (value.id == _fromProduct?.id) {
+                    return 'Cannot be same as from product';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -257,16 +379,64 @@ class _RepackagingRuleDialogState extends State<_RepackagingRuleDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () {
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              // TODO: Create rule
-              Navigator.of(context).pop();
+              await _createRepackagingRule(context);
             }
           },
           child: const Text('Create'),
         ),
       ],
     );
+  }
+
+  Future<void> _createRepackagingRule(BuildContext context) async {
+    try {
+      final container = ProviderScope.containerOf(context);
+      final organizationId = container.read(currentOrganizationIdProvider);
+      if (organizationId == null) {
+        throw Exception('No organization selected');
+      }
+
+      final conversionFactor = double.parse(_conversionFactorController.text);
+
+      final rule = RepackagingRule(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        organizationId: organizationId,
+        name: _nameController.text.trim(),
+        fromProductId: _fromProduct!.id,
+        toProductId: _toProduct!.id,
+        conversionFactor: conversionFactor,
+        requiresApproval: _requiresApproval,
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final service = RepackagingService();
+      await service.createRepackagingRule(rule);
+
+      if (context.mounted) {
+        container.invalidate(repackagingRulesProvider);
+        
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Repackaging rule created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating rule: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -384,14 +554,93 @@ class _ExecuteRepackagingDialogState extends State<_ExecuteRepackagingDialog> {
         ),
         FilledButton(
           onPressed: outputQuantity > 0
-              ? () {
-                  // TODO: Execute repackaging
-                  Navigator.of(context).pop();
+              ? () async {
+                  await _executeRepackaging(context);
                 }
               : null,
           child: const Text('Execute'),
         ),
       ],
     );
+  }
+
+  Future<void> _executeRepackaging(BuildContext context) async {
+    try {
+      final quantity = int.tryParse(_quantityController.text) ?? 0;
+      if (quantity <= 0) return;
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Executing repackaging...'),
+            ],
+          ),
+        ),
+      );
+
+      final container = ProviderScope.containerOf(context);
+      final organizationId = container.read(currentOrganizationIdProvider);
+      if (organizationId == null) {
+        Navigator.of(context).pop(); // Close loading dialog
+        throw Exception('No organization selected');
+      }
+
+      final service = RepackagingService();
+      final user = container.read(currentUserProvider);
+      if (user == null) {
+        throw Exception('User not found');
+      }
+
+      // Get the first available branch for the organization
+      final branchService = BranchService();
+      final branches = await branchService.getBranches(organizationId);
+      if (branches.isEmpty) {
+        throw Exception('No branches found for organization');
+      }
+      
+      final branchId = branches.first.id;
+
+      await service.executeRepackaging(
+        widget.rule.id,
+        branchId,
+        quantity.toDouble(),
+        user.id,
+        null,
+      );
+
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pop(); // Close execute dialog
+
+        // Refresh the rules list
+        container.invalidate(repackagingRulesProvider);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully repackaged $quantity units into ${(quantity * widget.rule.conversionFactor).toStringAsFixed(0)} units',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog if still open
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error executing repackaging: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

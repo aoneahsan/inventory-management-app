@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../domain/entities/serial_number.dart';
 import '../../../domain/entities/batch.dart';
 import '../../../services/tracking/serial_batch_service.dart';

@@ -2,9 +2,7 @@ import 'dart:convert';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common/sqflite.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 class AppDatabase {
   static Database? _database;

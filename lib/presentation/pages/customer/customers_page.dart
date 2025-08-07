@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:typed_data';
+import 'dart:convert';
+import 'dart:io' if (dart.library.html) 'dart:html' as html;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../domain/entities/customer.dart';
 import '../../../services/customer/customer_service.dart';
+import '../../../services/communication/communication_service.dart';
 import '../../providers/auth_provider.dart';
 
 final customerServiceProvider = Provider<CustomerService>((ref) {
@@ -438,23 +446,642 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
   }
 
   Future<void> _sendBulkEmail() async {
-    // TODO: Implement bulk email functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bulk email feature coming soon')),
+    if (_selectedCustomers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one customer')),
+      );
+      return;
+    }
+
+    // Show email compose dialog
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _BulkEmailDialog(
+        customerCount: _selectedCustomers.length,
+      ),
     );
+
+    if (result != null) {
+      try {
+        final org = ref.read(currentOrganizationProvider);
+        if (org == null) return;
+
+        final communicationService = CommunicationService();
+        final customers = await ref.read(customersProvider({
+          'searchQuery': null,
+          'customerType': _selectedType,
+          'activeOnly': true,
+        }).future);
+
+        final selectedCustomersList = customers
+            .where((c) => _selectedCustomers.contains(c.id))
+            .toList();
+
+        int successCount = 0;
+        int failCount = 0;
+
+        for (final customer in selectedCustomersList) {
+          if (customer.email != null && customer.email!.isNotEmpty) {
+            try {
+              await communicationService.sendEmail(
+                organizationId: org.id,
+                recipientId: customer.id,
+                recipientType: 'customer',
+                subject: result['subject']!,
+                body: result['body']!,
+                metadata: {
+                  'customerName': customer.name,
+                  'customerCode': customer.code,
+                  'bulkSend': true,
+                },
+              );
+              successCount++;
+            } catch (e) {
+              failCount++;
+            }
+          } else {
+            failCount++;
+          }
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Emails sent: $successCount successful, $failCount failed',
+              ),
+              backgroundColor: failCount > 0 ? Colors.orange : Colors.green,
+            ),
+          );
+          setState(() {
+            _isSelectionMode = false;
+            _selectedCustomers.clear();
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error sending emails: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _exportLabels() async {
-    // TODO: Implement label export functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Label export feature coming soon')),
+    if (_selectedCustomers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one customer')),
+      );
+      return;
+    }
+
+    // Show label configuration dialog
+    final config = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _LabelConfigDialog(),
     );
+
+    if (config != null) {
+      try {
+        final customers = await ref.read(customersProvider({
+          'searchQuery': null,
+          'customerType': _selectedType,
+          'activeOnly': true,
+        }).future);
+
+        final selectedCustomersList = customers
+            .where((c) => _selectedCustomers.contains(c.id))
+            .toList();
+
+        // Generate PDF with labels
+        final pdf = pw.Document();
+        final labelsPerPage = config['labelsPerRow'] * config['labelsPerColumn'];
+        final totalPages = (selectedCustomersList.length / labelsPerPage).ceil();
+
+        for (int page = 0; page < totalPages; page++) {
+          pdf.addPage(
+            pw.Page(
+              pageFormat: PdfPageFormat.a4,
+              margin: const pw.EdgeInsets.all(10),
+              build: (context) {
+                final startIdx = page * labelsPerPage;
+                final endIdx = (startIdx + labelsPerPage).clamp(0, selectedCustomersList.length);
+                final pageCustomers = selectedCustomersList.sublist(startIdx, endIdx);
+
+                return pw.GridView(
+                  crossAxisCount: config['labelsPerRow'],
+                  childAspectRatio: config['labelWidth'] / config['labelHeight'],
+                  crossAxisSpacing: 5,
+                  mainAxisSpacing: 5,
+                  children: pageCustomers.map((customer) {
+                    return pw.Container(
+                      padding: const pw.EdgeInsets.all(5),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(width: 0.5),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            customer.name,
+                            style: pw.TextStyle(
+                              fontSize: config['includeName'] ? 10 : 0,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                          if (config['includeCode'])
+                            pw.Text(
+                              'Code: ${customer.code}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                          if (config['includePhone'] && customer.phone != null)
+                            pw.Text(
+                              'Ph: ${customer.phone}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                          if (config['includeAddress'] && customer.address != null)
+                            pw.Text(
+                              customer.address!,
+                              style: const pw.TextStyle(fontSize: 7),
+                              maxLines: 2,
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          );
+        }
+
+        // Print or save the PDF
+        await Printing.layoutPdf(
+          onLayout: (format) async => pdf.save(),
+          name: 'customer_labels_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
+
+        if (mounted) {
+          setState(() {
+            _isSelectionMode = false;
+            _selectedCustomers.clear();
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error generating labels: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _exportCustomers() async {
-    // TODO: Implement customer export functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Customer export feature coming soon')),
+    if (_selectedCustomers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one customer')),
+      );
+      return;
+    }
+
+    // Show export format dialog
+    final format = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Format'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.description),
+              title: const Text('CSV'),
+              subtitle: const Text('Comma-separated values'),
+              onTap: () => Navigator.of(context).pop('csv'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.code),
+              title: const Text('JSON'),
+              subtitle: const Text('JavaScript Object Notation'),
+              onTap: () => Navigator.of(context).pop('json'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('PDF'),
+              subtitle: const Text('Portable Document Format'),
+              onTap: () => Navigator.of(context).pop('pdf'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (format != null) {
+      try {
+        final customers = await ref.read(customersProvider({
+          'searchQuery': null,
+          'customerType': _selectedType,
+          'activeOnly': true,
+        }).future);
+
+        final selectedCustomersList = customers
+            .where((c) => _selectedCustomers.contains(c.id))
+            .toList();
+
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final filename = 'customers_export_$timestamp';
+
+        switch (format) {
+          case 'csv':
+            await _exportAsCSV(selectedCustomersList, filename);
+            break;
+          case 'json':
+            await _exportAsJSON(selectedCustomersList, filename);
+            break;
+          case 'pdf':
+            await _exportAsPDF(selectedCustomersList, filename);
+            break;
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Exported ${selectedCustomersList.length} customers'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {
+            _isSelectionMode = false;
+            _selectedCustomers.clear();
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error exporting customers: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _exportAsCSV(List<Customer> customers, String filename) async {
+    final csvData = StringBuffer();
+    
+    // Headers
+    csvData.writeln('Code,Name,Type,Email,Phone,Address,City,State,ZIP,Country,Tax ID,Credit Limit,Tags,Status,Created Date');
+    
+    // Data rows
+    for (final customer in customers) {
+      csvData.writeln([
+        customer.code,
+        '"${customer.name.replaceAll('"', '""')}"',
+        customer.customerType,
+        customer.email ?? '',
+        customer.phone ?? '',
+        '"${customer.address?.replaceAll('"', '""') ?? ''}"',
+        customer.city ?? '',
+        customer.state ?? '',
+        customer.zipCode ?? '',
+        customer.country ?? '',
+        customer.taxId ?? '',
+        customer.creditLimit?.toString() ?? '',
+        customer.tags?.join(';') ?? '',
+        customer.isActive ? 'Active' : 'Inactive',
+        customer.createdAt.toIso8601String(),
+      ].join(','));
+    }
+
+    final bytes = utf8.encode(csvData.toString());
+    await _downloadFile(bytes, '$filename.csv', 'text/csv');
+  }
+
+  Future<void> _exportAsJSON(List<Customer> customers, String filename) async {
+    final jsonData = customers.map((c) => {
+      'code': c.code,
+      'name': c.name,
+      'type': c.customerType,
+      'email': c.email,
+      'phone': c.phone,
+      'address': c.address,
+      'city': c.city,
+      'state': c.state,
+      'zipCode': c.zipCode,
+      'country': c.country,
+      'taxId': c.taxId,
+      'creditLimit': c.creditLimit,
+      'tags': c.tags,
+      'isActive': c.isActive,
+      'createdAt': c.createdAt.toIso8601String(),
+      'metadata': c.metadata,
+    }).toList();
+
+    final bytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(jsonData));
+    await _downloadFile(bytes, '$filename.json', 'application/json');
+  }
+
+  Future<void> _exportAsPDF(List<Customer> customers, String filename) async {
+    final pdf = pw.Document();
+
+    // Add pages with customer data
+    const pageSize = 20;
+    for (int i = 0; i < customers.length; i += pageSize) {
+      final end = (i + pageSize).clamp(0, customers.length);
+      final pageCustomers = customers.sublist(i, end);
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(20),
+          build: (context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Customer Export',
+                  style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Text(
+                  'Generated on: ${DateTime.now().toString().split('.')[0]}',
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Table.fromTextArray(
+                  headers: ['Code', 'Name', 'Email', 'Phone', 'Type', 'Status'],
+                  data: pageCustomers.map((c) => [
+                    c.code,
+                    c.name,
+                    c.email ?? '-',
+                    c.phone ?? '-',
+                    c.customerType,
+                    c.isActive ? 'Active' : 'Inactive',
+                  ]).toList(),
+                  cellStyle: const pw.TextStyle(fontSize: 8),
+                  headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                  cellAlignment: pw.Alignment.centerLeft,
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    final bytes = await pdf.save();
+    await _downloadFile(bytes, '$filename.pdf', 'application/pdf');
+  }
+
+  Future<void> _downloadFile(Uint8List bytes, String filename, String mimeType) async {
+    if (kIsWeb) {
+      // Web download
+      final blob = html.Blob([bytes], mimeType);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement()
+        ..href = url
+        ..download = filename
+        ..click();
+      html.Url.revokeObjectUrl(url);
+    } else {
+      // Mobile/Desktop - use printing plugin
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: filename,
+      );
+    }
+  }
+}
+
+class _BulkEmailDialog extends StatefulWidget {
+  final int customerCount;
+
+  const _BulkEmailDialog({
+    required this.customerCount,
+  });
+
+  @override
+  State<_BulkEmailDialog> createState() => _BulkEmailDialogState();
+}
+
+class _BulkEmailDialogState extends State<_BulkEmailDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _subjectController = TextEditingController();
+  final _bodyController = TextEditingController();
+
+  @override
+  void dispose() {
+    _subjectController.dispose();
+    _bodyController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Send Bulk Email'),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.4,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Sending to ${widget.customerCount} customer${widget.customerCount > 1 ? 's' : ''}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _subjectController,
+                decoration: const InputDecoration(
+                  labelText: 'Subject',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a subject';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _bodyController,
+                decoration: const InputDecoration(
+                  labelText: 'Message',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 8,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a message';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Available variables: {customerName}, {customerCode}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              Navigator.of(context).pop({
+                'subject': _subjectController.text,
+                'body': _bodyController.text,
+              });
+            }
+          },
+          child: const Text('Send Emails'),
+        ),
+      ],
+    );
+  }
+}
+
+class _LabelConfigDialog extends StatefulWidget {
+  @override
+  State<_LabelConfigDialog> createState() => _LabelConfigDialogState();
+}
+
+class _LabelConfigDialogState extends State<_LabelConfigDialog> {
+  int _labelsPerRow = 3;
+  int _labelsPerColumn = 10;
+  double _labelWidth = 70;
+  double _labelHeight = 25;
+  bool _includeName = true;
+  bool _includeCode = true;
+  bool _includePhone = true;
+  bool _includeAddress = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Configure Labels'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Layout Settings'),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Labels per row',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        _labelsPerRow = int.tryParse(value) ?? 3;
+                      });
+                    },
+                    controller: TextEditingController(text: _labelsPerRow.toString()),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Labels per column',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        _labelsPerColumn = int.tryParse(value) ?? 10;
+                      });
+                    },
+                    controller: TextEditingController(text: _labelsPerColumn.toString()),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('Include in Labels'),
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              title: const Text('Customer Name'),
+              value: _includeName,
+              onChanged: (value) => setState(() => _includeName = value ?? true),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            CheckboxListTile(
+              title: const Text('Customer Code'),
+              value: _includeCode,
+              onChanged: (value) => setState(() => _includeCode = value ?? true),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            CheckboxListTile(
+              title: const Text('Phone Number'),
+              value: _includePhone,
+              onChanged: (value) => setState(() => _includePhone = value ?? true),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            CheckboxListTile(
+              title: const Text('Address'),
+              value: _includeAddress,
+              onChanged: (value) => setState(() => _includeAddress = value ?? true),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop({
+              'labelsPerRow': _labelsPerRow,
+              'labelsPerColumn': _labelsPerColumn,
+              'labelWidth': _labelWidth,
+              'labelHeight': _labelHeight,
+              'includeName': _includeName,
+              'includeCode': _includeCode,
+              'includePhone': _includePhone,
+              'includeAddress': _includeAddress,
+            });
+          },
+          child: const Text('Generate Labels'),
+        ),
+      ],
     );
   }
 }

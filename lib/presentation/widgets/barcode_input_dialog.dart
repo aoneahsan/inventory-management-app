@@ -11,7 +11,6 @@ class BarcodeInputDialog extends StatefulWidget {
 class _BarcodeInputDialogState extends State<BarcodeInputDialog> {
   final _controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isScanning = false;
 
   @override
   void initState() {
@@ -74,18 +73,6 @@ class _BarcodeInputDialogState extends State<BarcodeInputDialog> {
               onFieldSubmitted: (_) => _submitBarcode(),
             ),
             const SizedBox(height: 16),
-            if (_isScanning)
-              const Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 8),
-                  Text('Scanning...'),
-                ],
-              ),
             const SizedBox(height: 8),
             const Text(
               'Tip: Connect a USB barcode scanner for automatic input',

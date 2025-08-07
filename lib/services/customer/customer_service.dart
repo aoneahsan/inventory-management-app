@@ -1,14 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 import '../../domain/entities/customer.dart';
 import '../../core/errors/exceptions.dart';
+import '../../core/utils/id_generator.dart';
 import '../database/database.dart';
 
 class CustomerService {
   final FirebaseFirestore _firestore;
   final AppDatabase _database;
-  final _uuid = const Uuid();
 
   CustomerService({
     FirebaseFirestore? firestore,
@@ -116,7 +114,7 @@ class CustomerService {
   }) async {
     try {
       final now = DateTime.now();
-      final customerId = _uuid.v4();
+      final customerId = IdGenerator.generateId();
       
       // Generate customer code if not provided
       final customerCode = code ?? await _generateCustomerCode(organizationId);

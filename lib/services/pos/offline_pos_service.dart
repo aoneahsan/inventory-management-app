@@ -5,7 +5,6 @@ import '../database/database.dart';
 import '../sync/sync_service.dart';
 import '../../domain/entities/sale.dart';
 import '../../domain/entities/register.dart';
-import '../../domain/entities/receipt.dart';
 
 class OfflinePOSService {
   final AppDatabase database;
@@ -134,7 +133,6 @@ class OfflinePOSService {
 
   Future<void> _syncItem(Map<String, dynamic> item) async {
     final tableName = item['table_name'];
-    final operation = item['operation'];
     final data = json.decode(item['data']);
 
     switch (tableName) {

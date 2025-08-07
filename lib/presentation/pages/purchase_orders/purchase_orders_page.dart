@@ -5,7 +5,6 @@ import '../../../domain/entities/purchase_order.dart';
 import '../../../services/purchase/purchase_order_service.dart';
 import '../../../services/purchase/supplier_service.dart';
 import '../../../services/database/database.dart';
-import '../../../core/theme/app_theme.dart';
 // Removed non-existent search_bar import
 import '../../providers/auth_provider.dart';
 

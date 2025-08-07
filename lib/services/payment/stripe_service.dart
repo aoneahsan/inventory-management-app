@@ -9,14 +9,8 @@ import '../../core/errors/exceptions.dart';
 // TODO: Replace with actual Stripe SDK integration
 class StripeService {
   final FirebaseFirestore _firestore;
-  final FirebaseFunctions _functions;
   
   // Price IDs for different tiers (would come from Stripe dashboard)
-  static const Map<SubscriptionTier, String> _priceIds = {
-    SubscriptionTier.basic: 'price_basic_monthly',
-    SubscriptionTier.professional: 'price_professional_monthly',
-    SubscriptionTier.enterprise: 'price_enterprise_monthly',
-  };
 
   // Monthly prices in USD
   static const Map<SubscriptionTier, int> tierPrices = {
@@ -29,8 +23,7 @@ class StripeService {
   StripeService({
     FirebaseFirestore? firestore,
     FirebaseFunctions? functions,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _functions = functions ?? FirebaseFunctions.instance;
+  })  : _firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<String> createCheckoutSession({
     required String organizationId,

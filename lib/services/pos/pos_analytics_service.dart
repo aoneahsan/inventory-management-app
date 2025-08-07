@@ -1,6 +1,4 @@
-import 'package:sqflite/sqflite.dart';
 import '../database/database.dart';
-import '../../domain/entities/sale.dart';
 
 class POSAnalyticsService {
   final AppDatabase database;

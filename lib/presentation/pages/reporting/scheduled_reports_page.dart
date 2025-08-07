@@ -119,8 +119,39 @@ class ScheduledReportsPage extends ConsumerWidget {
                   ),
                   trailing: Switch(
                     value: report.isActive,
-                    onChanged: (value) {
-                      // TODO: Toggle report status
+                    onChanged: (value) async {
+                      try {
+                        final service = ScheduledReportService();
+                        final organizationId = ref.read(currentOrganizationIdProvider);
+                        if (organizationId == null) return;
+                        
+                        await service.updateReport(
+                          organizationId: organizationId,
+                          reportId: report.id,
+                          isActive: value,
+                        );
+                        
+                        ref.invalidate(scheduledReportsProvider);
+                        
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Report ${value ? 'activated' : 'deactivated'}',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error updating report: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
                     },
                   ),
                   children: [
@@ -174,8 +205,8 @@ class ScheduledReportsPage extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               TextButton.icon(
-                                onPressed: () {
-                                  // TODO: Run report now
+                                onPressed: () async {
+                                  await _runReportNow(context, ref, report);
                                 },
                                 icon: const Icon(Icons.play_arrow),
                                 label: const Text('Run Now'),
@@ -183,7 +214,7 @@ class ScheduledReportsPage extends ConsumerWidget {
                               const SizedBox(width: 8),
                               TextButton.icon(
                                 onPressed: () {
-                                  // TODO: View history
+                                  _showReportHistory(context, ref, report);
                                 },
                                 icon: const Icon(Icons.history),
                                 label: const Text('History'),
@@ -307,6 +338,70 @@ class ScheduledReportsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => const _ScheduledReportDialog(),
+    );
+  }
+
+  Future<void> _runReportNow(BuildContext context, WidgetRef ref, ScheduledReport report) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Generating report...'),
+            ],
+          ),
+        ),
+      );
+
+      final service = ScheduledReportService();
+      final organizationId = ref.read(currentOrganizationIdProvider);
+      if (organizationId == null) {
+        Navigator.of(context).pop();
+        return;
+      }
+
+      await service.runReportNow(
+        organizationId: organizationId,
+        reportId: report.id,
+      );
+
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Report generated and sent to ${report.recipients.join(", ")}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Refresh the reports list to update last run time
+        ref.invalidate(scheduledReportsProvider);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating report: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showReportHistory(BuildContext context, WidgetRef ref, ScheduledReport report) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _ReportHistorySheet(report: report),
     );
   }
 }
@@ -462,10 +557,9 @@ class _ScheduledReportDialogState extends State<_ScheduledReportDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () {
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              // TODO: Create scheduled report
-              Navigator.of(context).pop();
+              await _createScheduledReport(context);
             }
           },
           child: const Text('Schedule'),
@@ -497,5 +591,232 @@ class _ScheduledReportDialogState extends State<_ScheduledReportDialog> {
       case ReportType.lowStock:
         return Icons.warning;
     }
+  }
+
+  Future<void> _createScheduledReport(BuildContext context) async {
+    try {
+      // Parse recipients
+      final recipients = _recipientsController.text
+          .split(',')
+          .map((email) => email.trim())
+          .where((email) => email.isNotEmpty)
+          .toList();
+
+      // Build parameters based on frequency
+      final parameters = <String, dynamic>{};
+      switch (_selectedFrequency) {
+        case ReportFrequency.weekly:
+          parameters['days'] = ['Monday']; // Default to Monday
+          break;
+        case ReportFrequency.monthly:
+          parameters['day'] = 1; // Default to 1st of month
+          break;
+        default:
+          break;
+      }
+
+      final report = ScheduledReport(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        organizationId: '', // Will be set by service
+        name: _nameController.text.trim(),
+        reportType: _selectedType,
+        frequency: _selectedFrequency,
+        format: _selectedFormat,
+        recipients: recipients,
+        deliveryTime: _deliveryTime.format(context),
+        parameters: parameters,
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      // Get the current context's WidgetRef
+      final container = ProviderScope.containerOf(context);
+      final organizationId = container.read(currentOrganizationIdProvider);
+      if (organizationId == null) {
+        throw Exception('No organization selected');
+      }
+
+      final service = ScheduledReportService();
+      await service.createScheduledReport(
+        organizationId: organizationId,
+        report: report,
+      );
+
+      if (context.mounted) {
+        // Refresh the reports list
+        container.invalidate(scheduledReportsProvider);
+        
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Scheduled report created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating scheduled report: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
+
+class _ReportHistorySheet extends ConsumerWidget {
+  final ScheduledReport report;
+
+  const _ReportHistorySheet({
+    required this.report,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Report History',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchReportHistory(ref),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error: ${snapshot.error}'),
+                  );
+                }
+
+                final history = snapshot.data ?? [];
+                if (history.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.history,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('No history available'),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: history.length,
+                  itemBuilder: (context, index) {
+                    final run = history[index];
+                    final status = run['status'] as String;
+                    final runAt = DateTime.parse(run['runAt'] as String);
+                    
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: status == 'success'
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.red.withValues(alpha: 0.1),
+                          child: Icon(
+                            status == 'success'
+                                ? Icons.check_circle
+                                : Icons.error,
+                            color: status == 'success'
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                        ),
+                        title: Text(
+                          _formatDateTime(runAt),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Status: ${status.toUpperCase()}',
+                              style: TextStyle(
+                                color: status == 'success'
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                            if (run['error'] != null)
+                              Text(
+                                'Error: ${run['error']}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            if (run['duration'] != null)
+                              Text(
+                                'Duration: ${run['duration']}ms',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                          ],
+                        ),
+                        trailing: run['downloadUrl'] != null
+                            ? IconButton(
+                                icon: const Icon(Icons.download),
+                                onPressed: () {
+                                  // TODO: Download report
+                                },
+                              )
+                            : null,
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchReportHistory(WidgetRef ref) async {
+    final organizationId = ref.read(currentOrganizationIdProvider);
+    if (organizationId == null) return [];
+
+    final service = ScheduledReportService();
+    return service.getReportHistory(
+      organizationId: organizationId,
+      reportId: report.id,
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
