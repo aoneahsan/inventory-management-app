@@ -36,7 +36,7 @@ class CostLotService {
       'cost_lots',
       lot.copyWith(
         id: id,
-        remainingQuantity: lot.purchaseQuantity,
+        remainingQuantity: lot.quantity,
       ).toMap(),
     );
 

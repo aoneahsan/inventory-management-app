@@ -164,6 +164,21 @@ enum TransferStatus {
   }
 }
 
+extension TransferStatusExtension on TransferStatus {
+  String get displayName {
+    switch (this) {
+      case TransferStatus.pending:
+        return 'Pending';
+      case TransferStatus.inTransit:
+        return 'In Transit';
+      case TransferStatus.completed:
+        return 'Completed';
+      case TransferStatus.cancelled:
+        return 'Cancelled';
+    }
+  }
+}
+
 class StockTransferItem extends Equatable {
   final String id;
   final String transferId;

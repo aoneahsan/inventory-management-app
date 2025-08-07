@@ -52,15 +52,16 @@ class POSService {
         quantity: existingItem.quantity + quantity,
       );
     } else {
-      final taxAmount = product.sellingPrice * ((product.taxRate ?? 0) / 100) * quantity;
+      final sellingPrice = product.sellingPrice ?? 0;
+      final taxAmount = sellingPrice * (product.taxRate / 100) * quantity;
       _cart[product.id] = CartItem(
         productId: product.id,
         productName: product.name,
         quantity: quantity,
-        unitPrice: product.sellingPrice ?? 0,
-        taxPercent: product.taxRate ?? 0,
+        unitPrice: sellingPrice,
+        taxPercent: product.taxRate,
         taxAmount: taxAmount,
-        totalAmount: ((product.sellingPrice ?? 0) * quantity) + taxAmount,
+        totalAmount: (sellingPrice * quantity) + taxAmount,
       );
     }
     
@@ -211,11 +212,11 @@ class POSService {
         });
 
         // Update product stock
-        final product = await _productService.getProductById(item.productId);
+        final product = await _productService.getProduct(item.productId);
         if (product != null) {
           await _productService.adjustStock(
             productId: item.productId,
-            newQuantity: (product.currentStock ?? 0) - item.quantity,
+            newQuantity: product.currentStock - item.quantity,
             reason: 'Sale #$receiptNumber',
             performedBy: userId,
           );

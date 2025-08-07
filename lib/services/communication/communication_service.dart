@@ -10,7 +10,7 @@ class CommunicationService {
   // Template Management
   Future<List<CommunicationTemplate>> getTemplates(
     String organizationId, {
-    TemplateType? type,
+    CommunicationType? type,
     String? category,
     bool? activeOnly,
     String? searchQuery,
@@ -21,7 +21,7 @@ class CommunicationService {
 
     if (type != null) {
       query += ' AND type = ?';
-      args.add(type.value);
+      args.add(type.name);
     }
 
     if (category != null) {
@@ -294,7 +294,7 @@ class CommunicationService {
 
   Future<void> _sendImmediate(
     String logId,
-    TemplateType type,
+    CommunicationType type,
     String? subject,
     String content,
   ) async {
@@ -304,13 +304,13 @@ class CommunicationService {
       // In a real implementation, this would integrate with actual
       // SMS, Email, and WhatsApp APIs
       switch (type) {
-        case TemplateType.sms:
+        case CommunicationType.sms:
           // await _sendSMS(content);
           break;
-        case TemplateType.email:
+        case CommunicationType.email:
           // await _sendEmail(subject, content);
           break;
-        case TemplateType.whatsapp:
+        case CommunicationType.whatsapp:
           // await _sendWhatsApp(content);
           break;
       }
@@ -420,8 +420,9 @@ class CommunicationService {
         id: '',
         organizationId: organizationId,
         name: 'Order Confirmation',
-        type: TemplateType.sms,
-        category: 'Sales',
+        type: CommunicationType.sms,
+        trigger: CommunicationTrigger.orderPlaced,
+        variables: ['customer_name', 'order_number', 'total_amount'],
         subject: null,
         content: 'Dear {{customer_name}}, your order #{{order_number}} has been confirmed. Total: ₹{{total_amount}}. Thank you!',
         isActive: true,
@@ -432,8 +433,9 @@ class CommunicationService {
         id: '',
         organizationId: organizationId,
         name: 'Payment Reminder',
-        type: TemplateType.email,
-        category: 'Finance',
+        type: CommunicationType.email,
+        trigger: CommunicationTrigger.invoiceGenerated,
+        variables: ['customer_name', 'invoice_number', 'amount', 'due_date'],
         subject: 'Payment Reminder - Invoice #{{invoice_number}}',
         content: '''Dear {{customer_name}},
 
@@ -450,8 +452,9 @@ Thank you for your business!''',
         id: '',
         organizationId: organizationId,
         name: 'Low Stock Alert',
-        type: TemplateType.whatsapp,
-        category: 'Inventory',
+        type: CommunicationType.whatsapp,
+        trigger: CommunicationTrigger.lowStock,
+        variables: ['product_name', 'current_stock', 'unit'],
         subject: null,
         content: 'Stock Alert: {{product_name}} is running low. Current stock: {{current_stock}} {{unit}}. Please reorder soon.',
         isActive: true,

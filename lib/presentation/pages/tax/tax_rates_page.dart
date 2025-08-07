@@ -96,7 +96,7 @@ class _TaxRatesPageState extends ConsumerState<TaxRatesPage> {
 
           final gstRates = taxRates.where((r) => r.type == TaxType.gst).toList();
           final vatRates = taxRates.where((r) => r.type == TaxType.vat).toList();
-          final customRates = taxRates.where((r) => r.type == TaxType.custom).toList();
+          final customRates = taxRates.where((r) => r.type == TaxType.other).toList();
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -156,8 +156,7 @@ class _TaxRatesPageState extends ConsumerState<TaxRatesPage> {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (rate.hsnCode != null)
-                  Text('HSN: ${rate.hsnCode}'),
+                // HSN code is not part of TaxRate entity
                 if (rate.type == TaxType.gst)
                   Text(
                     'CGST: ${rate.cgstRate}% | SGST: ${rate.sgstRate}% | IGST: ${rate.igstRate}%',
@@ -168,23 +167,7 @@ class _TaxRatesPageState extends ConsumerState<TaxRatesPage> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (rate.isDefault)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Default',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
+                // isDefault is not part of TaxRate entity
                 const SizedBox(width: 8),
                 Switch(
                   value: rate.isActive,
@@ -226,7 +209,7 @@ class _TaxRatesPageState extends ConsumerState<TaxRatesPage> {
   }
 }
 
-class _TaxRateDialog extends StatefulWidget {
+class _TaxRateDialog extends ConsumerStatefulWidget {
   final TaxRate? taxRate;
   final VoidCallback onSave;
 
@@ -236,18 +219,16 @@ class _TaxRateDialog extends StatefulWidget {
   });
 
   @override
-  State<_TaxRateDialog> createState() => _TaxRateDialogState();
+  ConsumerState<_TaxRateDialog> createState() => _TaxRateDialogState();
 }
 
-class _TaxRateDialogState extends State<_TaxRateDialog> {
+class _TaxRateDialogState extends ConsumerState<_TaxRateDialog> {
   final _formKey = GlobalKey<FormState>();
   final _service = TaxRateService();
   
   late TextEditingController _nameController;
   late TextEditingController _rateController;
-  late TextEditingController _hsnCodeController;
   late TaxType _selectedType;
-  late bool _isDefault;
   
   @override
   void initState() {
@@ -256,16 +237,13 @@ class _TaxRateDialogState extends State<_TaxRateDialog> {
     _rateController = TextEditingController(
       text: widget.taxRate?.rate.toString() ?? '',
     );
-    _hsnCodeController = TextEditingController(text: widget.taxRate?.hsnCode ?? '');
     _selectedType = widget.taxRate?.type ?? TaxType.gst;
-    _isDefault = widget.taxRate?.isDefault ?? false;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _rateController.dispose();
-    _hsnCodeController.dispose();
     super.dispose();
   }
 
@@ -301,7 +279,7 @@ class _TaxRateDialogState extends State<_TaxRateDialog> {
                 items: TaxType.values.map((type) {
                   return DropdownMenuItem(
                     value: type,
-                    child: Text(type.displayName),
+                    child: Text(type.value),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -329,22 +307,7 @@ class _TaxRateDialogState extends State<_TaxRateDialog> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _hsnCodeController,
-                decoration: const InputDecoration(
-                  labelText: 'HSN Code',
-                  hintText: '1234',
-                ),
-              ),
-              const SizedBox(height: 16),
-              CheckboxListTile(
-                title: const Text('Set as default'),
-                value: _isDefault,
-                onChanged: (value) {
-                  setState(() => _isDefault = value ?? false);
-                },
-              ),
+              // HSN code and isDefault removed as they're not part of TaxRate entity
             ],
           ),
         ),
@@ -366,8 +329,8 @@ class _TaxRateDialogState extends State<_TaxRateDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      final organizationId = context.read<WidgetRef>()
-          .read(currentOrganizationIdProvider);
+      // Get organization ID from the current context
+      final organizationId = ref.read(currentOrganizationIdProvider);
       if (organizationId == null) return;
 
       final rate = double.parse(_rateController.text);
@@ -381,10 +344,9 @@ class _TaxRateDialogState extends State<_TaxRateDialog> {
         sgstRate: _selectedType == TaxType.gst ? rate / 2 : 0,
         igstRate: _selectedType == TaxType.gst ? rate : 0,
         cessRate: 0,
-        hsnCode: _hsnCodeController.text.trim().isEmpty 
-            ? null 
-            : _hsnCodeController.text.trim(),
-        isDefault: _isDefault,
+        code: _nameController.text.trim().replaceAll(' ', '_').toUpperCase(),
+        isCompound: false,
+        isInclusive: false,
         isActive: true,
         createdAt: widget.taxRate?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
@@ -396,9 +358,7 @@ class _TaxRateDialogState extends State<_TaxRateDialog> {
         await _service.updateTaxRate(widget.taxRate!.id, taxRate);
       }
 
-      if (_isDefault) {
-        await _service.setDefaultTaxRate(organizationId, taxRate.id);
-      }
+      // Default tax rate functionality removed
 
       widget.onSave();
       if (mounted) {

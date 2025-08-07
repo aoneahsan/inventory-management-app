@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/stock_transfer.dart';
 import '../../../services/transfer/stock_transfer_service.dart';
-import '../../widgets/app_drawer.dart';
 import '../../providers/organization_provider.dart';
 
 final stockTransfersProvider = FutureProvider.autoDispose<List<StockTransfer>>((ref) async {
@@ -56,7 +55,7 @@ class _StockTransfersPageState extends ConsumerState<StockTransfersPage> {
           ),
         ],
       ),
-      drawer: const AppDrawer(),
+      // Drawer removed
       body: transfersAsync.when(
         data: (transfers) {
           final filteredTransfers = _filterStatus == null

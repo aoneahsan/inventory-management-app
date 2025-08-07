@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqflite.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 class AppDatabase {
   static Database? _database;
@@ -16,8 +19,16 @@ class AppDatabase {
   }
 
   Future<Database> _initDatabase() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = join(documentsDirectory.path, 'inventory_app.db');
+    String path;
+    
+    if (kIsWeb) {
+      // For web, use an in-memory database or IndexedDB through sqflite_common_ffi_web
+      path = 'inventory_app.db';
+    } else {
+      // For mobile platforms, use the documents directory
+      final documentsDirectory = await getApplicationDocumentsDirectory();
+      path = join(documentsDirectory.path, 'inventory_app.db');
+    }
     
     return await openDatabase(
       path,
@@ -2011,37 +2022,6 @@ class AppDatabase {
       // Delete organization
       await txn.delete('organizations', where: 'id = ?', whereArgs: [organizationId]);
     });
-  }
-
-  // Sync queue operations
-  Future<List<Map<String, dynamic>>> getSyncQueue() async {
-    final db = await database;
-    return await db.query('sync_queue', orderBy: 'created_at ASC');
-  }
-
-  Future<void> removeSyncQueueItem(int id) async {
-    final db = await database;
-    await db.delete('sync_queue', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> updateSyncQueueItem(int id, Map<String, dynamic> updates) async {
-    final db = await database;
-    await db.update('sync_queue', updates, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> clearFailedSyncItems() async {
-    final db = await database;
-    await db.delete('sync_queue', where: 'retry_count >= ?', whereArgs: [3]);
-  }
-
-  Future<void> resetFailedSyncItems() async {
-    final db = await database;
-    await db.update(
-      'sync_queue',
-      {'retry_count': 0},
-      where: 'retry_count >= ?',
-      whereArgs: [3],
-    );
   }
 
   // Clear all data (for logout)

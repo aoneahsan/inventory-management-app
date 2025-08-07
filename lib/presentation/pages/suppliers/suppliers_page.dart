@@ -49,7 +49,7 @@ class SuppliersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value;
+    final user = ref.watch(currentUserProvider);
     if (user == null) return const SizedBox();
 
     final organizationId = user.organizationId!;
@@ -75,7 +75,7 @@ class SuppliersPage extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: app.SearchBar(
+                  child: SearchBar(
                     hintText: 'Search suppliers...',
                     onChanged: (value) {
                       ref.read(supplierSearchQueryProvider.notifier).state = value;
@@ -104,7 +104,7 @@ class SuppliersPage extends ConsumerWidget {
                         Icon(
                           Icons.business,
                           size: 64,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -242,13 +242,13 @@ class _SupplierCard extends StatelessWidget {
                           Icon(
                             Icons.email_outlined,
                             size: 16,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             supplier.email!,
                             style: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 14,
                             ),
                           ),
@@ -258,13 +258,13 @@ class _SupplierCard extends StatelessWidget {
                           Icon(
                             Icons.phone_outlined,
                             size: 16,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             supplier.phone!,
                             style: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 14,
                             ),
                           ),
@@ -278,7 +278,7 @@ class _SupplierCard extends StatelessWidget {
                         Text(
                           'Payment Terms: ${supplier.paymentTerms} days',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             fontSize: 14,
                           ),
                         ),
@@ -309,7 +309,7 @@ class _SupplierCard extends StatelessWidget {
               const SizedBox(width: 8),
               Icon(
                 Icons.chevron_right,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ),

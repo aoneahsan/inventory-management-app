@@ -54,10 +54,10 @@ class CustomerService {
 
       if (limit != null) {
         query += ' LIMIT ?';
-        params.add(limit);
+        params.add(limit.toString());
         if (offset != null) {
           query += ' OFFSET ?';
-          params.add(offset);
+          params.add(offset.toString());
         }
       }
 
@@ -165,6 +165,8 @@ class CustomerService {
     String? customerType,
     String? priceListId,
     double? creditLimit,
+    double? currentBalance,
+    int? loyaltyPoints,
     String? address,
     String? shippingAddress,
     String? status,
@@ -185,6 +187,8 @@ class CustomerService {
         customerType: customerType ?? existingCustomer.customerType,
         priceListId: priceListId ?? existingCustomer.priceListId,
         creditLimit: creditLimit ?? existingCustomer.creditLimit,
+        currentBalance: currentBalance ?? existingCustomer.currentBalance,
+        loyaltyPoints: loyaltyPoints ?? existingCustomer.loyaltyPoints,
         address: address ?? existingCustomer.address,
         shippingAddress: shippingAddress ?? existingCustomer.shippingAddress,
         status: status ?? existingCustomer.status,

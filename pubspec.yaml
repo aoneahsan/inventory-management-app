@@ -108,6 +108,7 @@ dependencies:
   
   # Logging
   logger: ^2.0.0
+  sqflite_common_ffi_web: ^1.0.1+1
 
 dev_dependencies:
   flutter_test:
@@ -144,3 +145,10 @@ flutter:
   #         weight: 600
   #       - asset: fonts/Poppins-Bold.ttf
   #         weight: 700
+
+# Flutter Native Splash configuration
+flutter_native_splash:
+  color: "#2196F3"
+  web: true
+  android: true
+  ios: true

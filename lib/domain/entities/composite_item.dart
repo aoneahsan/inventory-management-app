@@ -148,6 +148,24 @@ class CompositeItemComponent extends Equatable {
     required this.createdAt,
   });
 
+  CompositeItemComponent copyWith({
+    String? id,
+    String? compositeItemId,
+    String? productId,
+    double? quantity,
+    double? costPrice,
+    DateTime? createdAt,
+  }) {
+    return CompositeItemComponent(
+      id: id ?? this.id,
+      compositeItemId: compositeItemId ?? this.compositeItemId,
+      productId: productId ?? this.productId,
+      quantity: quantity ?? this.quantity,
+      costPrice: costPrice ?? this.costPrice,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

@@ -396,6 +396,8 @@ class _StockTransferFormPageState extends ConsumerState<StockTransferFormPage> {
         transferNumber: 'TR-${DateTime.now().millisecondsSinceEpoch}',
         items: items,
         status: TransferStatus.pending,
+        transferDate: DateTime.now(),
+        totalItems: items.length,
         notes: _notesController.text.trim().isEmpty 
             ? null 
             : _notesController.text.trim(),

@@ -5,6 +5,9 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:sqflite_common/sqflite.dart';
 import 'firebase_options.dart';
 import 'core/config/app_config.dart';
 import 'services/permissions/permission_service.dart';
@@ -36,6 +39,11 @@ void main() async {
   );
   
   try {
+    // Initialize database factory for web first
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
+    
     // Initialize environment configuration
     final envString = const String.fromEnvironment('ENV', defaultValue: 'dev');
     final environment = Environment.values.firstWhere(

@@ -19,8 +19,8 @@ class OfflinePOSService {
 
   // Check if online
   Future<bool> isOnline() async {
-    final connectivityResult = await _connectivity.checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
+    final connectivityResults = await _connectivity.checkConnectivity();
+    return connectivityResults.isNotEmpty && !connectivityResults.contains(ConnectivityResult.none);
   }
 
   // Queue a sale for sync
@@ -153,8 +153,8 @@ class OfflinePOSService {
 
   // Monitor connectivity and sync automatically
   void startAutoSync() {
-    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
-      if (result != ConnectivityResult.none) {
+    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      if (results.isNotEmpty && !results.contains(ConnectivityResult.none)) {
         // Back online, process sync queue
         processSyncQueue();
       }

@@ -132,11 +132,11 @@ class RepackagingService {
 
     final sourceInventory = await _branchService.getBranchInventory(
       branchId,
-      rule.sourceProductId,
+      rule.fromProductId,
     );
 
-    final sourceProduct = await _productService.getProduct(rule.sourceProductId);
-    final targetProduct = await _productService.getProduct(rule.targetProductId);
+    final sourceProduct = await _productService.getProduct(rule.fromProductId);
+    final targetProduct = await _productService.getProduct(rule.toProductId);
 
     final availableQuantity = sourceInventory?.availableStock ?? 0;
     final canRepackage = availableQuantity >= sourceQuantity;
@@ -198,26 +198,26 @@ class RepackagingService {
       // Deduct source product stock
       await _branchService.updateBranchInventory(
         branchId,
-        rule.sourceProductId,
+        rule.fromProductId,
         -sourceQuantity,
       );
 
       // Add target product stock
       await _branchService.updateBranchInventory(
         branchId,
-        rule.targetProductId,
+        rule.toProductId,
         targetQuantity,
       );
 
       // Create inventory movements
-      final sourceProduct = await _productService.getProduct(rule.sourceProductId);
-      final targetProduct = await _productService.getProduct(rule.targetProductId);
+      final sourceProduct = await _productService.getProduct(rule.fromProductId);
+      final targetProduct = await _productService.getProduct(rule.toProductId);
 
       // Out movement for source product
       await txn.insert('inventory_movements', {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'organization_id': rule.organizationId,
-        'product_id': rule.sourceProductId,
+        'product_id': rule.fromProductId,
         'type': 'out',
         'quantity': sourceQuantity,
         'reason': 'Repackaged to ${targetProduct?.name ?? 'target product'}',
@@ -231,7 +231,7 @@ class RepackagingService {
       await txn.insert('inventory_movements', {
         'id': (DateTime.now().millisecondsSinceEpoch + 1).toString(),
         'organization_id': rule.organizationId,
-        'product_id': rule.targetProductId,
+        'product_id': rule.toProductId,
         'type': 'in',
         'quantity': targetQuantity,
         'reason': 'Repackaged from ${sourceProduct?.name ?? 'source product'}',

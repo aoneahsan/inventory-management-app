@@ -246,6 +246,12 @@ class ScheduledReportsPage extends ConsumerWidget {
         return Icons.analytics;
       case ReportType.financial:
         return Icons.attach_money;
+      case ReportType.customer:
+        return Icons.people;
+      case ReportType.supplier:
+        return Icons.business;
+      case ReportType.lowStock:
+        return Icons.warning;
     }
   }
 
@@ -484,6 +490,12 @@ class _ScheduledReportDialogState extends State<_ScheduledReportDialog> {
         return Icons.analytics;
       case ReportType.financial:
         return Icons.attach_money;
+      case ReportType.customer:
+        return Icons.people;
+      case ReportType.supplier:
+        return Icons.business;
+      case ReportType.lowStock:
+        return Icons.warning;
     }
   }
 }

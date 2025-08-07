@@ -302,7 +302,7 @@ class _BatchesView extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '₹${batch.costPrice.toStringAsFixed(2)}',
+                      '₹${batch.costPrice?.toStringAsFixed(2) ?? 'N/A'}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
