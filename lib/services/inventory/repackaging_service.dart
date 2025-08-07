@@ -10,8 +10,11 @@ import 'product_service.dart';
 class RepackagingService {
   final AppDatabase _database = AppDatabase.instance;
   final BranchService _branchService = BranchService();
-  final ProductService _productService = ProductService();
+  final ProductService _productService;
   final SyncService _syncService = SyncService();
+  
+  RepackagingService({ProductService? productService}) 
+    : _productService = productService ?? ProductService();
 
   Future<List<RepackagingRule>> getRepackagingRules(
     String organizationId, {

@@ -6,6 +6,8 @@ import '../../../domain/entities/product.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/entities/inventory_movement.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/barcode_provider.dart';
+import '../../widgets/barcode_input_dialog.dart';
 import 'products_page.dart';
 
 final editProductProvider = FutureProvider.family<Product?, String>((ref, productId) async {
@@ -517,11 +519,31 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     );
   }
 
-  void _scanBarcode() {
-    // TODO: Implement barcode scanning
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Barcode scanning will be implemented later')),
-    );
+  Future<void> _scanBarcode() async {
+    try {
+      final barcodeScanner = ref.read(barcodeScannerProvider);
+      String? barcode;
+
+      if (barcodeScanner.isSupported) {
+        // Use native barcode scanner on mobile
+        barcode = await barcodeScanner.scanBarcode();
+      } else {
+        // Show manual input dialog on web
+        barcode = await showBarcodeInputDialog(context);
+      }
+
+      if (barcode != null && barcode.isNotEmpty) {
+        // Update barcode field
+        _barcodeController.text = barcode;
+        _formKey.currentState?.save();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error scanning barcode: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   Future<void> _saveProduct() async {

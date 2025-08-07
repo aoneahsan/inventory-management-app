@@ -6,8 +6,9 @@ import '../../../domain/entities/branch.dart';
 import '../../../domain/entities/product.dart';
 import '../../../services/transfer/stock_transfer_service.dart';
 import '../../../services/branch/branch_service.dart';
-import '../../../services/product/product_service.dart';
 import '../../providers/organization_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../inventory/products_page.dart';
 
 class StockTransferFormPage extends ConsumerStatefulWidget {
   const StockTransferFormPage({super.key});
@@ -20,7 +21,6 @@ class _StockTransferFormPageState extends ConsumerState<StockTransferFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _service = StockTransferService();
   final _branchService = BranchService();
-  final _productService = ProductService();
   
   Branch? _fromBranch;
   Branch? _toBranch;
@@ -53,7 +53,8 @@ class _StockTransferFormPageState extends ConsumerState<StockTransferFormPage> {
 
     try {
       final branches = await _branchService.getBranches(organizationId);
-      final products = await _productService.getProducts(organizationId);
+      final productService = ref.read(productServiceProvider);
+      final products = await productService.getProducts(organizationId);
       
       setState(() {
         _branches = branches;
@@ -398,7 +399,7 @@ class _StockTransferFormPageState extends ConsumerState<StockTransferFormPage> {
         notes: _notesController.text.trim().isEmpty 
             ? null 
             : _notesController.text.trim(),
-        createdBy: 'current_user', // TODO: Get from auth
+        createdBy: ref.read(currentUserProvider)?.id ?? 'unknown',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

@@ -2,10 +2,7 @@
   "name": "inventory-management-app",
   "version": "1.0.0",
   "description": "Multi-tenant SaaS inventory management system built with Flutter and Firebase",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aoneahsan/inventory-management-app.git"
-  },
+  "repository": "git+https://github.com/aoneahsan/inventory-management-app.git",
   "homepage": "https://inventory.zaions.com",
   "bugs": {
     "url": "https://github.com/aoneahsan/inventory-management-app/issues"
@@ -19,5 +16,19 @@
     "firebase",
     "saas",
     "multi-tenant"
-  ]
+  ],
+  "main": "index.js",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:headless": "cypress run --headless",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "flutter:web": "flutter run -d chrome --web-port=5000",
+    "flutter:build": "flutter build web",
+    "flutter:test": "flutter test"
+  },
+  "devDependencies": {
+    "cypress": "^14.5.3"
+  }
 }

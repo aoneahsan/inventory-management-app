@@ -1,0 +1,88 @@
+{
+  "users": {
+    "admin": {
+      "email": "admin@inventory.test",
+      "password": "TestPassword123!",
+      "name": "Test Admin",
+      "role": "admin"
+    },
+    "manager": {
+      "email": "manager@inventory.test", 
+      "password": "TestPassword123!",
+      "name": "Test Manager",
+      "role": "manager"
+    },
+    "staff": {
+      "email": "staff@inventory.test",
+      "password": "TestPassword123!",
+      "name": "Test Staff",
+      "role": "staff"
+    }
+  },
+  "products": [
+    {
+      "name": "Test Product 1",
+      "sku": "TEST001",
+      "barcode": "1234567890123",
+      "price": "99.99",
+      "cost": "50.00",
+      "stock": "100",
+      "category": "Electronics",
+      "unit": "piece"
+    },
+    {
+      "name": "Test Product 2",
+      "sku": "TEST002",
+      "barcode": "1234567890124",
+      "price": "49.99",
+      "cost": "25.00",
+      "stock": "50",
+      "category": "Accessories",
+      "unit": "piece"
+    },
+    {
+      "name": "Test Product 3",
+      "sku": "TEST003",
+      "barcode": "1234567890125",
+      "price": "29.99",
+      "cost": "15.00",
+      "stock": "200",
+      "category": "Consumables",
+      "unit": "box"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Electronics",
+      "description": "Electronic items and gadgets"
+    },
+    {
+      "name": "Accessories",
+      "description": "Accessories and peripherals"
+    },
+    {
+      "name": "Consumables",
+      "description": "Consumable items"
+    }
+  ],
+  "branches": [
+    {
+      "name": "Main Store",
+      "type": "store",
+      "address": "123 Main St, City",
+      "phone": "+1234567890"
+    },
+    {
+      "name": "Warehouse",
+      "type": "warehouse",
+      "address": "456 Industrial Ave, City",
+      "phone": "+1234567891"
+    }
+  ],
+  "organization": {
+    "name": "Test Company Inc",
+    "type": "retail",
+    "industry": "General Retail",
+    "taxId": "12-3456789"
+  }
+}

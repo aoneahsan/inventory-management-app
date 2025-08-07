@@ -39,18 +39,17 @@ class BarcodeScannerServiceImpl implements BarcodeScannerService {
   }
 }
 
-// Web implementation using QR code input or camera API
+// Web implementation using manual input dialog
 class WebBarcodeScannerService implements BarcodeScannerService {
   @override
   bool get isSupported => kIsWeb;
   
   @override
   Future<String?> scanBarcode() async {
-    // For web, we'll show a dialog where users can:
-    // 1. Manually enter barcode
-    // 2. Use webcam if available (future enhancement)
-    // 3. Upload an image with barcode (future enhancement)
-    throw UnimplementedError('Web barcode scanning will be implemented with dialog input');
+    // For web, return null to indicate manual input is needed
+    // The calling code should handle this by showing a dialog
+    // This avoids throwing errors and allows graceful fallback
+    return null;
   }
 }
 

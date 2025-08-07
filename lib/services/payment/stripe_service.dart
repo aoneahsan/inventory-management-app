@@ -43,54 +43,55 @@ class StripeService {
       throw BusinessException(message: 'Cannot create checkout session for free tier');
     }
 
+    // Mock implementation - always return success for development
+    // TODO: Implement actual Stripe integration
+    debugPrint('Mock Stripe: Creating checkout session for $tier');
+    
+    // Simulate API delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Update organization subscription in Firestore (mock payment success)
     try {
-      // In production, this would call a Cloud Function that creates a Stripe checkout session
-      final callable = _functions.httpsCallable('createCheckoutSession');
-      final result = await callable.call({
-        'organizationId': organizationId,
-        'userId': userId,
-        'priceId': _priceIds[tier],
-        'successUrl': successUrl ?? 'https://inventory.zaions.com/subscription/success',
-        'cancelUrl': cancelUrl ?? 'https://inventory.zaions.com/subscription/cancel',
+      await _firestore.collection('organizations').doc(organizationId).update({
+        'subscription_tier': tier.name,
+        'subscription_status': SubscriptionStatus.active.name,
+        'subscription_expires_at': DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
-
-      return result.data['sessionUrl'] as String;
     } catch (e) {
-      // For development, return a mock URL
-      debugPrint('Mock Stripe: Creating checkout session for $tier');
-      return 'https://checkout.stripe.com/mock-session-${DateTime.now().millisecondsSinceEpoch}';
+      debugPrint('Error updating organization subscription: $e');
     }
+    
+    // Return mock checkout URL
+    return 'https://checkout.stripe.com/mock-session-${DateTime.now().millisecondsSinceEpoch}';
   }
 
   Future<void> cancelSubscription(String organizationId) async {
+    // Mock implementation - always update status for development
+    // TODO: Implement actual Stripe integration
+    debugPrint('Mock Stripe: Cancelling subscription for $organizationId');
+    
+    // Simulate API delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    
     try {
-      // In production, this would call a Cloud Function to cancel the Stripe subscription
-      final callable = _functions.httpsCallable('cancelSubscription');
-      await callable.call({
-        'organizationId': organizationId,
-      });
-    } catch (e) {
-      // For development, just update the organization status
-      debugPrint('Mock Stripe: Cancelling subscription for $organizationId');
       await _firestore.collection('organizations').doc(organizationId).update({
         'subscription_status': SubscriptionStatus.cancelled.name,
         'subscription_expires_at': DateTime.now().add(const Duration(days: 30)).toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
+    } catch (e) {
+      debugPrint('Error cancelling subscription: $e');
+      throw BusinessException(message: 'Failed to cancel subscription');
     }
   }
 
   Future<Map<String, dynamic>> getSubscriptionDetails(String organizationId) async {
+    // Mock implementation - fetch from Firestore for development
+    // TODO: Implement actual Stripe integration
+    debugPrint('Mock Stripe: Getting subscription details for $organizationId');
+    
     try {
-      // In production, this would fetch from Stripe via Cloud Function
-      final callable = _functions.httpsCallable('getSubscriptionDetails');
-      final result = await callable.call({
-        'organizationId': organizationId,
-      });
-      
-      return result.data as Map<String, dynamic>;
-    } catch (e) {
-      // For development, return mock data
       final org = await _firestore.collection('organizations').doc(organizationId).get();
       if (!org.exists) {
         throw BusinessException(message: 'Organization not found');
@@ -105,10 +106,23 @@ class StripeService {
       return {
         'organizationId': organizationId,
         'tier': tier.name,
-        'status': data['subscription_status'],
-        'currentPeriodEnd': data['subscription_expires_at'],
+        'status': data['subscription_status'] ?? SubscriptionStatus.active.name,
+        'currentPeriodEnd': data['subscription_expires_at'] ?? DateTime.now().add(const Duration(days: 30)).toIso8601String(),
         'cancelAtPeriodEnd': false,
-        'amount': tierPrices[tier],
+        'amount': tierPrices[tier] ?? 0,
+        'currency': 'usd',
+        'interval': 'month',
+      };
+    } catch (e) {
+      debugPrint('Error getting subscription details: $e');
+      // Return default free tier data
+      return {
+        'organizationId': organizationId,
+        'tier': SubscriptionTier.free.name,
+        'status': SubscriptionStatus.active.name,
+        'currentPeriodEnd': DateTime.now().add(const Duration(days: 365)).toIso8601String(),
+        'cancelAtPeriodEnd': false,
+        'amount': 0,
         'currency': 'usd',
         'interval': 'month',
       };
@@ -116,48 +130,43 @@ class StripeService {
   }
 
   Future<List<Map<String, dynamic>>> getInvoices(String organizationId) async {
-    try {
-      // In production, this would fetch from Stripe via Cloud Function
-      final callable = _functions.httpsCallable('getInvoices');
-      final result = await callable.call({
-        'organizationId': organizationId,
-      });
-      
-      return (result.data as List).cast<Map<String, dynamic>>();
-    } catch (e) {
-      // For development, return mock invoices
-      final now = DateTime.now();
-      return List.generate(3, (index) {
-        final date = now.subtract(Duration(days: 30 * (index + 1)));
-        return {
-          'id': 'inv_mock_${date.millisecondsSinceEpoch}',
-          'number': 'INV-${date.year}${date.month.toString().padLeft(2, '0')}-${index + 1}',
-          'amount': 2900, // $29.00 in cents
-          'currency': 'usd',
-          'status': 'paid',
-          'created': date.millisecondsSinceEpoch ~/ 1000,
-          'paid': true,
-          'invoicePdf': 'https://stripe.com/mock-invoice.pdf',
-        };
-      });
-    }
+    // Mock implementation - return sample invoices for development
+    // TODO: Implement actual Stripe integration
+    debugPrint('Mock Stripe: Getting invoices for $organizationId');
+    
+    // Simulate API delay
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    // Return mock invoices
+    final now = DateTime.now();
+    return List.generate(3, (index) {
+      final date = now.subtract(Duration(days: 30 * (index + 1)));
+      return {
+        'id': 'inv_mock_${date.millisecondsSinceEpoch}',
+        'number': 'INV-${date.year}${date.month.toString().padLeft(2, '0')}-${index + 1}',
+        'amount': 2900, // $29.00 in cents
+        'currency': 'usd',
+        'status': 'paid',
+        'created': date.millisecondsSinceEpoch ~/ 1000,
+        'paid': true,
+        'invoicePdf': 'https://stripe.com/mock-invoice.pdf',
+      };
+    });
   }
 
   Future<void> updatePaymentMethod({
     required String organizationId,
     required String paymentMethodId,
   }) async {
-    try {
-      // In production, this would update the payment method in Stripe
-      final callable = _functions.httpsCallable('updatePaymentMethod');
-      await callable.call({
-        'organizationId': organizationId,
-        'paymentMethodId': paymentMethodId,
-      });
-    } catch (e) {
-      // For development, just log
-      debugPrint('Mock Stripe: Updating payment method for $organizationId');
-    }
+    // Mock implementation - just log for development
+    // TODO: Implement actual Stripe integration
+    debugPrint('Mock Stripe: Updating payment method for $organizationId');
+    
+    // Simulate API delay
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    // In production, this would update the payment method in Stripe
+    // For now, we just simulate success
   }
 
   // Webhook handler (would be called by Cloud Functions)

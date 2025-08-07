@@ -9,8 +9,11 @@ import 'product_service.dart';
 class CompositeItemService {
   final AppDatabase _database = AppDatabase.instance;
   final BranchService _branchService = BranchService();
-  final ProductService _productService = ProductService();
+  final ProductService _productService;
   final SyncService _syncService = SyncService();
+  
+  CompositeItemService({ProductService? productService}) 
+    : _productService = productService ?? ProductService();
 
   Future<List<CompositeItem>> getCompositeItems(
     String organizationId, {
