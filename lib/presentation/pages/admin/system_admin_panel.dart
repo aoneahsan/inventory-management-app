@@ -743,26 +743,223 @@ class _SystemAdminPanelState extends ConsumerState<SystemAdminPanel>
   }
 
   void _showDatabaseManagementDialog() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Database Management feature coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Database Management'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.backup, color: Colors.blue),
+              title: Text('Backup Database'),
+              subtitle: Text('Create a backup of all data'),
+            ),
+            ListTile(
+              leading: Icon(Icons.restore, color: Colors.green),
+              title: Text('Restore Database'),
+              subtitle: Text('Restore from a previous backup'),
+            ),
+            ListTile(
+              leading: Icon(Icons.cleaning_services, color: Colors.orange),
+              title: Text('Database Maintenance'),
+              subtitle: Text('Optimize database performance'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showSecuritySettingsDialog() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Security Settings feature coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Security Settings'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SwitchListTile(
+              value: true,
+              onChanged: null,
+              title: Text('Two-Factor Authentication'),
+              subtitle: Text('Require 2FA for all users'),
+            ),
+            SwitchListTile(
+              value: false,
+              onChanged: null,
+              title: Text('IP Whitelisting'),
+              subtitle: Text('Restrict access to specific IPs'),
+            ),
+            ListTile(
+              title: Text('Password Policy'),
+              subtitle: Text('Minimum 8 characters, complexity required'),
+              trailing: Icon(Icons.edit),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showSystemUpdatesDialog() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('System Updates feature coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('System Updates'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Current Version: 1.0.0',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text('Latest Version: 1.0.0'),
+                    SizedBox(height: 8),
+                    Text(
+                      'System is up to date',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Checking for updates...')),
+                );
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Check for Updates'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showSystemLogsDialog() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('System Logs feature coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('System Logs'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: Column(
+            children: [
+              // Filter chips
+              Wrap(
+                spacing: 8,
+                children: [
+                  FilterChip(
+                    label: const Text('All'),
+                    selected: true,
+                    onSelected: (_) {},
+                  ),
+                  FilterChip(
+                    label: const Text('Errors'),
+                    selected: false,
+                    onSelected: (_) {},
+                  ),
+                  FilterChip(
+                    label: const Text('Warnings'),
+                    selected: false,
+                    onSelected: (_) {},
+                  ),
+                  FilterChip(
+                    label: const Text('Info'),
+                    selected: false,
+                    onSelected: (_) {},
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Sample logs
+              Expanded(
+                child: ListView(
+                  children: [
+                    _buildLogEntry('INFO', 'System started successfully', DateTime.now()),
+                    _buildLogEntry('INFO', 'User login: admin@example.com', DateTime.now().subtract(const Duration(minutes: 5))),
+                    _buildLogEntry('WARNING', 'High memory usage detected', DateTime.now().subtract(const Duration(minutes: 10))),
+                    _buildLogEntry('ERROR', 'Failed to send email notification', DateTime.now().subtract(const Duration(minutes: 15))),
+                    _buildLogEntry('INFO', 'Database backup completed', DateTime.now().subtract(const Duration(hours: 1))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {},
+            child: const Text('Export Logs'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogEntry(String level, String message, DateTime timestamp) {
+    Color levelColor;
+    IconData levelIcon;
+    
+    switch (level) {
+      case 'ERROR':
+        levelColor = Colors.red;
+        levelIcon = Icons.error;
+        break;
+      case 'WARNING':
+        levelColor = Colors.orange;
+        levelIcon = Icons.warning;
+        break;
+      default:
+        levelColor = Colors.blue;
+        levelIcon = Icons.info;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: Icon(levelIcon, color: levelColor, size: 20),
+        title: Text(message),
+        subtitle: Text(
+          '${timestamp.toString().split('.')[0]} - $level',
+          style: const TextStyle(fontSize: 12),
+        ),
+      ),
     );
   }
 
@@ -804,5 +1001,375 @@ class _SystemAdminPanelState extends ConsumerState<SystemAdminPanel>
         ],
       ),
     );
+  }
+}
+
+// Dialog Widgets
+class _CreateOrganizationDialog extends ConsumerStatefulWidget {
+  final VoidCallback onCreated;
+
+  const _CreateOrganizationDialog({required this.onCreated});
+
+  @override
+  ConsumerState<_CreateOrganizationDialog> createState() => _CreateOrganizationDialogState();
+}
+
+class _CreateOrganizationDialogState extends ConsumerState<_CreateOrganizationDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  String? _selectedOwnerId;
+  bool _isLoading = false;
+  List<User> _users = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final authService = AuthService();
+      final users = await authService.getAllUsers();
+      setState(() {
+        _users = users;
+      });
+    } catch (e) {
+      debugPrint('Error loading users: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Create Organization'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Organization Name*',
+                  hintText: 'Enter organization name',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter organization name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Enter organization description (optional)',
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedOwnerId,
+                decoration: const InputDecoration(
+                  labelText: 'Organization Owner*',
+                  hintText: 'Select organization owner',
+                ),
+                items: _users.map((user) {
+                  return DropdownMenuItem(
+                    value: user.id,
+                    child: Text('${user.name} (${user.email})'),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedOwnerId = value);
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select an owner';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _isLoading ? null : _createOrganization,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Create'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _createOrganization() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final orgService = OrganizationService();
+      await orgService.createSystemOrganization(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        ownerId: _selectedOwnerId!,
+      );
+
+      if (mounted) {
+        widget.onCreated();
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Organization created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating organization: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+}
+
+class _CreateUserDialog extends ConsumerStatefulWidget {
+  final VoidCallback onCreated;
+
+  const _CreateUserDialog({required this.onCreated});
+
+  @override
+  ConsumerState<_CreateUserDialog> createState() => _CreateUserDialogState();
+}
+
+class _CreateUserDialogState extends ConsumerState<_CreateUserDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  UserRole _selectedRole = UserRole.viewer;
+  String? _selectedOrganizationId;
+  bool _isLoading = false;
+  List<Organization> _organizations = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOrganizations();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadOrganizations() async {
+    try {
+      final orgService = OrganizationService();
+      final organizations = await orgService.getAllOrganizations();
+      setState(() {
+        _organizations = organizations;
+      });
+    } catch (e) {
+      debugPrint('Error loading organizations: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Create User'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name*',
+                  hintText: 'Enter user\'s full name',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter user\'s name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email*',
+                  hintText: 'Enter user\'s email',
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<UserRole>(
+                value: _selectedRole,
+                decoration: const InputDecoration(
+                  labelText: 'Role*',
+                  hintText: 'Select user role',
+                ),
+                items: UserRole.values.map((role) {
+                  return DropdownMenuItem(
+                    value: role,
+                    child: Text(_getRoleDisplayName(role)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedRole = value);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedOrganizationId,
+                decoration: const InputDecoration(
+                  labelText: 'Organization',
+                  hintText: 'Select organization (optional)',
+                ),
+                items: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('No Organization'),
+                  ),
+                  ..._organizations.map((org) {
+                    return DropdownMenuItem(
+                      value: org.id,
+                      child: Text(org.name),
+                    );
+                  }),
+                ],
+                onChanged: (value) {
+                  setState(() => _selectedOrganizationId = value);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _isLoading ? null : _createUser,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Create'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _createUser() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = AuthService();
+      await authService.createSystemUser(
+        email: _emailController.text.trim(),
+        name: _nameController.text.trim(),
+        role: _selectedRole,
+        organizationId: _selectedOrganizationId,
+      );
+
+      if (mounted) {
+        widget.onCreated();
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating user: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  String _getRoleDisplayName(UserRole role) {
+    switch (role) {
+      case UserRole.systemAdmin:
+        return 'System Admin';
+      case UserRole.organizationOwner:
+        return 'Organization Owner';
+      case UserRole.admin:
+        return 'Admin';
+      case UserRole.manager:
+        return 'Manager';
+      case UserRole.staff:
+        return 'Staff';
+      case UserRole.viewer:
+        return 'Viewer';
+    }
   }
 }

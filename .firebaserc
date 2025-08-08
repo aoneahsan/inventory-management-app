@@ -1,0 +1,31 @@
+{
+  "projects": {
+    "default": "inventory-dev",
+    "dev": "inventory-dev",
+    "staging": "inventory-staging", 
+    "prod": "inventory-prod"
+  },
+  "targets": {
+    "inventory-dev": {
+      "hosting": {
+        "dev": [
+          "inventory-management-dev"
+        ]
+      }
+    },
+    "inventory-staging": {
+      "hosting": {
+        "staging": [
+          "inventory-management-staging"
+        ]
+      }
+    },
+    "inventory-prod": {
+      "hosting": {
+        "prod": [
+          "inventory-management-prod"
+        ]
+      }
+    }
+  }
+}

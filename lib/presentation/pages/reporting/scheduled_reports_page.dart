@@ -125,10 +125,9 @@ class ScheduledReportsPage extends ConsumerWidget {
                         final organizationId = ref.read(currentOrganizationIdProvider);
                         if (organizationId == null) return;
                         
-                        await service.updateReport(
-                          organizationId: organizationId,
-                          reportId: report.id,
-                          isActive: value,
+                        await service.updateScheduledReport(
+                          report.id,
+                          report.copyWith(isActive: value),
                         );
                         
                         ref.invalidate(scheduledReportsProvider);
@@ -365,10 +364,7 @@ class ScheduledReportsPage extends ConsumerWidget {
         return;
       }
 
-      await service.runReportNow(
-        organizationId: organizationId,
-        reportId: report.id,
-      );
+      await service.runReportNow(report.id);
 
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading dialog
@@ -615,33 +611,36 @@ class _ScheduledReportDialogState extends State<_ScheduledReportDialog> {
           break;
       }
 
-      final report = ScheduledReport(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        organizationId: '', // Will be set by service
-        name: _nameController.text.trim(),
-        reportType: _selectedType,
-        frequency: _selectedFrequency,
-        format: _selectedFormat,
-        recipients: recipients,
-        deliveryTime: _deliveryTime.format(context),
-        parameters: parameters,
-        isActive: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
       // Get the current context's WidgetRef
       final container = ProviderScope.containerOf(context);
       final organizationId = container.read(currentOrganizationIdProvider);
       if (organizationId == null) {
         throw Exception('No organization selected');
       }
+      
+      final report = ScheduledReport(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        organizationId: organizationId,
+        name: _nameController.text.trim(),
+        reportType: _selectedType,
+        schedule: _selectedFrequency == ReportFrequency.daily
+            ? ReportSchedule.daily
+            : _selectedFrequency == ReportFrequency.weekly
+                ? ReportSchedule.weekly
+                : ReportSchedule.monthly,
+        format: _selectedFormat,
+        recipients: recipients,
+        parameters: {
+          ...parameters,
+          'deliveryTime': _deliveryTime.format(context),
+        },
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
 
       final service = ScheduledReportService();
-      await service.createScheduledReport(
-        organizationId: organizationId,
-        report: report,
-      );
+      await service.createScheduledReport(report);
 
       if (context.mounted) {
         // Refresh the reports list
@@ -810,10 +809,7 @@ class _ReportHistorySheet extends ConsumerWidget {
     if (organizationId == null) return [];
 
     final service = ScheduledReportService();
-    return service.getReportHistory(
-      organizationId: organizationId,
-      reportId: report.id,
-    );
+    return service.getReportHistory(report.id);
   }
 
   String _formatDateTime(DateTime dateTime) {

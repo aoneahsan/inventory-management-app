@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/repackaging_rule.dart';
 import '../../../domain/entities/product.dart';
 import '../../../services/inventory/repackaging_service.dart';
-import '../../../services/inventory/product_service.dart';
 import '../../../services/branch/branch_service.dart';
 import '../../providers/organization_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -403,9 +402,10 @@ class _RepackagingRuleDialogState extends State<_RepackagingRuleDialog> {
       final rule = RepackagingRule(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         organizationId: organizationId,
-        name: _nameController.text.trim(),
+        ruleName: _nameController.text.trim(),
         fromProductId: _fromProduct!.id,
         toProductId: _toProduct!.id,
+        conversionRate: conversionFactor,
         conversionFactor: conversionFactor,
         requiresApproval: _requiresApproval,
         isActive: true,

@@ -72,15 +72,15 @@ class CommunicationTemplatesPage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               if (smsTemplates.isNotEmpty) ...[
-                _buildSection(context, 'SMS Templates', smsTemplates, Icons.sms, Colors.blue),
+                _buildSection(context, ref, 'SMS Templates', smsTemplates, Icons.sms, Colors.blue),
                 const SizedBox(height: 16),
               ],
               if (emailTemplates.isNotEmpty) ...[
-                _buildSection(context, 'Email Templates', emailTemplates, Icons.email, Colors.red),
+                _buildSection(context, ref, 'Email Templates', emailTemplates, Icons.email, Colors.red),
                 const SizedBox(height: 16),
               ],
               if (whatsappTemplates.isNotEmpty) ...[
-                _buildSection(context, 'WhatsApp Templates', whatsappTemplates, Icons.chat, Colors.green),
+                _buildSection(context, ref, 'WhatsApp Templates', whatsappTemplates, Icons.chat, Colors.green),
               ],
             ],
           );
@@ -95,6 +95,7 @@ class CommunicationTemplatesPage extends ConsumerWidget {
 
   Widget _buildSection(
     BuildContext context,
+    WidgetRef ref,
     String title,
     List<CommunicationTemplate> templates,
     IconData icon,
@@ -163,9 +164,8 @@ class CommunicationTemplatesPage extends ConsumerWidget {
                   if (organizationId == null) return;
                   
                   await service.updateTemplate(
-                    organizationId: organizationId,
-                    templateId: template.id,
-                    isActive: value,
+                    template.id,
+                    template.copyWith(isActive: value),
                   );
                   
                   ref.invalidate(communicationTemplatesProvider);
@@ -191,7 +191,7 @@ class CommunicationTemplatesPage extends ConsumerWidget {
                 }
               },
             ),
-            onTap: () => _showTemplatePreview(context, template),
+            onTap: () => _showTemplatePreview(context, ref, template),
           )),
         ],
       ),
@@ -226,7 +226,7 @@ class CommunicationTemplatesPage extends ConsumerWidget {
     );
   }
 
-  void _showTemplatePreview(BuildContext context, CommunicationTemplate template) {
+  void _showTemplatePreview(BuildContext context, WidgetRef ref, CommunicationTemplate template) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -338,56 +338,13 @@ class CommunicationTemplatesPage extends ConsumerWidget {
         });
 
         // Send test message
-        switch (template.channel) {
-          case CommunicationChannel.sms:
-            await service.sendSMS(
-              organizationId: organizationId,
-              recipientId: 'test',
-              recipientType: 'test',
-              message: processedContent,
-              metadata: {
-                'templateId': template.id,
-                'templateName': template.name,
-                'isTest': true,
-                'phone': recipient['phone'],
-              },
-            );
-            break;
-          case CommunicationChannel.email:
-            String processedSubject = template.subject ?? 'Test Email';
-            testData.forEach((key, value) {
-              processedSubject = processedSubject.replaceAll('{$key}', value);
-            });
-            
-            await service.sendEmail(
-              organizationId: organizationId,
-              recipientId: 'test',
-              recipientType: 'test',
-              subject: processedSubject,
-              body: processedContent,
-              metadata: {
-                'templateId': template.id,
-                'templateName': template.name,
-                'isTest': true,
-                'email': recipient['email'],
-              },
-            );
-            break;
-          case CommunicationChannel.whatsapp:
-            await service.sendWhatsApp(
-              organizationId: organizationId,
-              recipientId: 'test',
-              recipientType: 'test',
-              message: processedContent,
-              metadata: {
-                'templateId': template.id,
-                'templateName': template.name,
-                'isTest': true,
-                'phone': recipient['phone'],
-              },
-            );
-            break;
-        }
+        await service.sendCommunication(
+          organizationId: organizationId,
+          templateId: template.id,
+          recipientId: 'test-recipient',
+          recipientType: 'test',
+          variables: testData,
+        );
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -734,12 +691,21 @@ class _TemplateDialogState extends State<_TemplateDialog> {
       final matches = variablePattern.allMatches(_contentController.text);
       final variables = matches.map((m) => m.group(1)!).toSet().toList();
 
+      // Get the current context's WidgetRef
+      final container = ProviderScope.containerOf(context);
+      final organizationId = container.read(currentOrganizationIdProvider);
+      if (organizationId == null) {
+        throw Exception('No organization selected');
+      }
+
       final template = CommunicationTemplate(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        organizationId: '', // Will be set by service
+        organizationId: organizationId,
         name: _nameController.text.trim(),
-        channel: _selectedChannel,
-        triggerEvent: _selectedTrigger,
+        type: _selectedChannel == CommunicationChannel.sms ? CommunicationType.sms
+            : _selectedChannel == CommunicationChannel.email ? CommunicationType.email
+            : CommunicationType.whatsapp,
+        trigger: _selectedTrigger,
         subject: _selectedChannel == CommunicationChannel.email
             ? _subjectController.text.trim()
             : null,
@@ -750,18 +716,8 @@ class _TemplateDialogState extends State<_TemplateDialog> {
         updatedAt: DateTime.now(),
       );
 
-      // Get the current context's WidgetRef
-      final container = ProviderScope.containerOf(context);
-      final organizationId = container.read(currentOrganizationIdProvider);
-      if (organizationId == null) {
-        throw Exception('No organization selected');
-      }
-
       final service = CommunicationService();
-      await service.createTemplate(
-        organizationId: organizationId,
-        template: template,
-      );
+      await service.createTemplate(template);
 
       if (context.mounted) {
         // Refresh the templates list

@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:typed_data';
 import 'dart:convert';
-import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../domain/entities/customer.dart';
+import '../../../domain/entities/communication_template.dart';
 import '../../../services/customer/customer_service.dart';
 import '../../../services/communication/communication_service.dart';
 import '../../providers/auth_provider.dart';
@@ -470,7 +470,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
         final communicationService = CommunicationService();
         final customers = await ref.read(customersProvider({
           'searchQuery': null,
-          'customerType': _selectedType,
+          'customerType': _selectedCustomerType,
           'activeOnly': true,
         }).future);
 
@@ -484,16 +484,32 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
         for (final customer in selectedCustomersList) {
           if (customer.email != null && customer.email!.isNotEmpty) {
             try {
-              await communicationService.sendEmail(
+              // Create a temporary template for bulk email
+              final templateId = DateTime.now().millisecondsSinceEpoch.toString();
+              final template = CommunicationTemplate(
+                id: templateId,
                 organizationId: org.id,
+                name: 'Bulk Email - ${DateTime.now()}',
+                type: CommunicationType.email,
+                trigger: CommunicationTrigger.custom,
+                subject: result['subject']!,
+                content: result['body']!,
+                variables: ['customerName', 'customerCode'],
+                isActive: true,
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              );
+              
+              await communicationService.createTemplate(template);
+              
+              await communicationService.sendCommunication(
+                organizationId: org.id,
+                templateId: templateId,
                 recipientId: customer.id,
                 recipientType: 'customer',
-                subject: result['subject']!,
-                body: result['body']!,
-                metadata: {
+                variables: {
                   'customerName': customer.name,
-                  'customerCode': customer.code,
-                  'bulkSend': true,
+                  'customerCode': customer.code ?? '',
                 },
               );
               successCount++;
@@ -550,7 +566,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
       try {
         final customers = await ref.read(customersProvider({
           'searchQuery': null,
-          'customerType': _selectedType,
+          'customerType': _selectedCustomerType,
           'activeOnly': true,
         }).future);
 
@@ -560,7 +576,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
 
         // Generate PDF with labels
         final pdf = pw.Document();
-        final labelsPerPage = config['labelsPerRow'] * config['labelsPerColumn'];
+        final labelsPerPage = (config['labelsPerRow'] as int) * (config['labelsPerColumn'] as int);
         final totalPages = (selectedCustomersList.length / labelsPerPage).ceil();
 
         for (int page = 0; page < totalPages; page++) {
@@ -574,8 +590,8 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                 final pageCustomers = selectedCustomersList.sublist(startIdx, endIdx);
 
                 return pw.GridView(
-                  crossAxisCount: config['labelsPerRow'],
-                  childAspectRatio: config['labelWidth'] / config['labelHeight'],
+                  crossAxisCount: config['labelsPerRow'] as int,
+                  childAspectRatio: (config['labelWidth'] as double) / (config['labelHeight'] as double),
                   crossAxisSpacing: 5,
                   mainAxisSpacing: 5,
                   children: pageCustomers.map((customer) {
@@ -694,7 +710,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
       try {
         final customers = await ref.read(customersProvider({
           'searchQuery': null,
-          'customerType': _selectedType,
+          'customerType': _selectedCustomerType,
           'activeOnly': true,
         }).future);
 
@@ -757,13 +773,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
         customer.email ?? '',
         customer.phone ?? '',
         '"${customer.address?.replaceAll('"', '""') ?? ''}"',
-        customer.city ?? '',
-        customer.state ?? '',
-        customer.zipCode ?? '',
-        customer.country ?? '',
-        customer.taxId ?? '',
-        customer.creditLimit?.toString() ?? '',
-        customer.tags?.join(';') ?? '',
+        customer.creditLimit.toString(),
         customer.isActive ? 'Active' : 'Inactive',
         customer.createdAt.toIso8601String(),
       ].join(','));
@@ -781,16 +791,9 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
       'email': c.email,
       'phone': c.phone,
       'address': c.address,
-      'city': c.city,
-      'state': c.state,
-      'zipCode': c.zipCode,
-      'country': c.country,
-      'taxId': c.taxId,
       'creditLimit': c.creditLimit,
-      'tags': c.tags,
       'isActive': c.isActive,
       'createdAt': c.createdAt.toIso8601String(),
-      'metadata': c.metadata,
     }).toList();
 
     final bytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(jsonData));
@@ -824,7 +827,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                   style: const pw.TextStyle(fontSize: 10),
                 ),
                 pw.SizedBox(height: 20),
-                pw.Table.fromTextArray(
+                pw.TableHelper.fromTextArray(
                   headers: ['Code', 'Name', 'Email', 'Phone', 'Type', 'Status'],
                   data: pageCustomers.map((c) => [
                     c.code,
@@ -852,13 +855,13 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
   Future<void> _downloadFile(Uint8List bytes, String filename, String mimeType) async {
     if (kIsWeb) {
       // Web download
-      final blob = html.Blob([bytes], mimeType);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement()
-        ..href = url
-        ..download = filename
-        ..click();
-      html.Url.revokeObjectUrl(url);
+      // For web platform, use universal_html or dart:html
+      // Since we're using conditional imports, we need to handle this differently
+      // For now, use the printing plugin which works on web too
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: filename,
+      );
     } else {
       // Mobile/Desktop - use printing plugin
       await Printing.sharePdf(
@@ -978,8 +981,8 @@ class _LabelConfigDialog extends StatefulWidget {
 class _LabelConfigDialogState extends State<_LabelConfigDialog> {
   int _labelsPerRow = 3;
   int _labelsPerColumn = 10;
-  double _labelWidth = 70;
-  double _labelHeight = 25;
+  final double _labelWidth = 70;
+  final double _labelHeight = 25;
   bool _includeName = true;
   bool _includeCode = true;
   bool _includePhone = true;

@@ -254,7 +254,7 @@ class _StockTransferFormPageState extends ConsumerState<StockTransferFormPage> {
                           ),
                           onTap: () => _removeProduct(entry.key),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ],
                 ),
