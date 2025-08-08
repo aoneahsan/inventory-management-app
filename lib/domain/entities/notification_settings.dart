@@ -9,6 +9,7 @@ class NotificationSettings extends Equatable {
   final bool systemAnnouncements;
   final bool emailNotifications;
   final bool pushNotifications;
+  final bool smsNotifications;
   final int lowStockThreshold;
   final String? quietHoursStart;
   final String? quietHoursEnd;
@@ -23,6 +24,7 @@ class NotificationSettings extends Equatable {
     this.systemAnnouncements = true,
     this.emailNotifications = true,
     this.pushNotifications = true,
+    this.smsNotifications = false,
     this.lowStockThreshold = 10,
     this.quietHoursStart,
     this.quietHoursEnd,
@@ -38,6 +40,7 @@ class NotificationSettings extends Equatable {
     bool? systemAnnouncements,
     bool? emailNotifications,
     bool? pushNotifications,
+    bool? smsNotifications,
     int? lowStockThreshold,
     String? quietHoursStart,
     String? quietHoursEnd,
@@ -52,6 +55,7 @@ class NotificationSettings extends Equatable {
       systemAnnouncements: systemAnnouncements ?? this.systemAnnouncements,
       emailNotifications: emailNotifications ?? this.emailNotifications,
       pushNotifications: pushNotifications ?? this.pushNotifications,
+      smsNotifications: smsNotifications ?? this.smsNotifications,
       lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
       quietHoursStart: quietHoursStart ?? this.quietHoursStart,
       quietHoursEnd: quietHoursEnd ?? this.quietHoursEnd,
@@ -69,6 +73,7 @@ class NotificationSettings extends Equatable {
       'system_announcements': systemAnnouncements,
       'email_notifications': emailNotifications,
       'push_notifications': pushNotifications,
+      'sms_notifications': smsNotifications,
       'low_stock_threshold': lowStockThreshold,
       'quiet_hours_start': quietHoursStart,
       'quiet_hours_end': quietHoursEnd,
@@ -86,6 +91,7 @@ class NotificationSettings extends Equatable {
       systemAnnouncements: json['system_announcements'] as bool? ?? true,
       emailNotifications: json['email_notifications'] as bool? ?? true,
       pushNotifications: json['push_notifications'] as bool? ?? true,
+      smsNotifications: json['sms_notifications'] as bool? ?? false,
       lowStockThreshold: json['low_stock_threshold'] as int? ?? 10,
       quietHoursStart: json['quiet_hours_start'] as String?,
       quietHoursEnd: json['quiet_hours_end'] as String?,
@@ -105,6 +111,7 @@ class NotificationSettings extends Equatable {
         systemAnnouncements,
         emailNotifications,
         pushNotifications,
+        smsNotifications,
         lowStockThreshold,
         quietHoursStart,
         quietHoursEnd,

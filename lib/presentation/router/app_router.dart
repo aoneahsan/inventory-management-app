@@ -9,6 +9,7 @@ import '../pages/auth/forgot_password_page.dart';
 import '../pages/organization/organization_setup_page.dart';
 import '../pages/organization/organization_settings_page.dart';
 import '../pages/subscription/subscription_page.dart';
+import '../pages/billing/checkout_success_page.dart';
 import '../pages/inventory/product_details_page.dart';
 import '../pages/inventory/product_form_page.dart';
 import '../pages/home/home_page.dart';
@@ -39,6 +40,10 @@ import '../pages/export/data_export_page.dart';
 import '../pages/analytics/analytics_charts_page.dart';
 import '../pages/backup/backup_restore_page.dart';
 import '../pages/audit/audit_logs_page.dart';
+import '../pages/settings/notification_preferences_page.dart';
+import '../pages/reports/advanced_reports_page.dart';
+import '../pages/barcode/barcode_generator_page.dart';
+import '../pages/settings/currency_settings_page.dart';
 import 'router_notifier.dart';
 
 class AppRouter {
@@ -49,6 +54,7 @@ class AppRouter {
   static const String organizationSetup = '/organization/setup';
   static const String organizationSettings = '/organization/settings';
   static const String subscription = '/subscription';
+  static const String billingSuccess = '/billing/success';
   static const String home = '/home';
   static const String onboarding = '/onboarding';
   static const String featureTour = '/feature-tour';
@@ -82,6 +88,9 @@ class AppRouter {
   static const String analyticsCharts = '/analytics/charts';
   static const String backupRestore = '/backup';
   static const String auditLogs = '/audit';
+  static const String advancedReports = '/reports/advanced';
+  static const String barcodeGenerator = '/barcode/generator';
+  static const String currencySettings = '/settings/currency';
 
   static GoRouter router(Ref ref) {
     final routerNotifier = ref.watch(routerNotifierProvider);
@@ -143,6 +152,11 @@ class AppRouter {
               targetTier: extra?['targetTier'] as SubscriptionTier?,
             );
           },
+        ),
+        GoRoute(
+          path: billingSuccess,
+          name: 'billingSuccess',
+          builder: (context, state) => const CheckoutSuccessPage(),
         ),
         GoRoute(
           path: home,
@@ -319,6 +333,21 @@ class AppRouter {
           path: auditLogs,
           name: 'auditLogs',
           builder: (context, state) => const AuditLogsPage(),
+        ),
+        GoRoute(
+          path: advancedReports,
+          name: 'advancedReports',
+          builder: (context, state) => const AdvancedReportsPage(),
+        ),
+        GoRoute(
+          path: barcodeGenerator,
+          name: 'barcodeGenerator',
+          builder: (context, state) => const BarcodeGeneratorPage(),
+        ),
+        GoRoute(
+          path: currencySettings,
+          name: 'currencySettings',
+          builder: (context, state) => const CurrencySettingsPage(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

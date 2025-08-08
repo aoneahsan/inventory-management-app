@@ -533,47 +533,18 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           organizationId: org.id,
           userId: user.id,
           tier: newTier,
+          successUrl: '${Uri.base.origin}/billing/success',
+          cancelUrl: '${Uri.base.origin}/billing',
         );
         
-        // For development, just show a message
+        // Launch the Stripe checkout URL
         if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Checkout'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('In production, this would redirect to:'),
-                  const SizedBox(height: 8),
-                  Text(
-                    checkoutUrl,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('For now, we\'ll simulate a successful upgrade.'),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    // Simulate successful upgrade
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Subscription upgraded successfully!'),
-                      ),
-                    );
-                  },
-                  child: const Text('Continue'),
-                ),
-              ],
-            ),
-          );
+          final uri = Uri.parse(checkoutUrl);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.platformDefault);
+          } else {
+            throw 'Could not launch checkout URL';
+          }
         }
       }
     } catch (e) {
@@ -591,12 +562,25 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   }
 
   Future<void> _handleUpdatePaymentMethod() async {
-    // In production, this would open Stripe's payment method update flow
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Payment method update will be available in production'),
-      ),
-    );
+    try {
+      final org = ref.read(currentOrganizationProvider)!;
+      final stripeService = ref.read(stripeServiceProvider);
+      
+      // Open Stripe billing portal
+      await stripeService.createBillingPortalSession(
+        organizationId: org.id,
+        returnUrl: Uri.base.origin,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleCancelSubscription() async {

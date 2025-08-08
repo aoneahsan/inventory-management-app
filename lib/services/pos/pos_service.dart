@@ -6,21 +6,25 @@ import '../../core/errors/exceptions.dart';
 import '../database/database.dart';
 import '../inventory/product_service.dart';
 import '../sync/sync_service.dart';
+import '../notification/email_sms_service.dart';
 import 'offline_pos_service.dart';
 
 class POSService {
   final AppDatabase _database;
   final ProductService _productService;
   final SyncService _syncService;
+  final EmailSmsService _emailSmsService;
   late final OfflinePOSService _offlinePOSService;
 
   POSService({
     required AppDatabase database,
     required ProductService productService,
     required SyncService syncService,
+    EmailSmsService? emailSmsService,
   })  : _database = database,
         _productService = productService,
-        _syncService = syncService {
+        _syncService = syncService,
+        _emailSmsService = emailSmsService ?? EmailSmsService() {
     _offlinePOSService = OfflinePOSService(
       database: database,
       syncService: syncService,
@@ -233,6 +237,25 @@ class POSService {
 
     // Clear cart after successful sale
     clearCart();
+    
+    // Send order confirmation notification if customer exists
+    if (_currentCustomerId != null) {
+      try {
+        await _emailSmsService.sendOrderConfirmation(
+          orderNumber: receiptNumber,
+          totalAmount: total,
+          items: saleItems.map((item) => {
+            'name': item.productName,
+            'quantity': item.quantity,
+            'price': item.unitPrice,
+            'total': item.totalAmount,
+          }).toList(),
+        );
+      } catch (e) {
+        // Don't fail the sale if notification fails
+        print('Error sending order confirmation: $e');
+      }
+    }
 
     return sale;
   }

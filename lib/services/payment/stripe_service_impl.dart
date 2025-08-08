@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../domain/entities/organization.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/config/environment.dart';
@@ -67,6 +68,14 @@ class StripeServiceImpl {
       });
 
       final sessionUrl = result.data['url'] as String;
+      
+      // For web, redirect to Stripe checkout
+      if (kIsWeb) {
+        // Use url_launcher package to open checkout URL
+        // This will be handled by the calling widget
+        return sessionUrl;
+      }
+      
       return sessionUrl;
     } catch (e) {
       debugPrint('Error creating checkout session: $e');
@@ -89,16 +98,23 @@ class StripeServiceImpl {
 
       // Call Cloud Function to create billing portal session
       final callable = _functions.httpsCallable('createStripeBillingPortalSession');
-      await callable.call({
+      final result = await callable.call({
         'customerId': stripeCustomerId,
         'returnUrl': returnUrl ?? Environment.appUrl,
       });
 
-      // Portal URL is available at: result.data['url']
-      // TODO: Implement URL launching for web and mobile
-      throw UnimplementedError('URL launching needs to be implemented');
+      final portalUrl = result.data['url'] as String;
+      
+      // Launch the billing portal URL
+      final uri = Uri.parse(portalUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw BusinessException(message: 'Could not open billing portal');
+      }
     } catch (e) {
       debugPrint('Error creating billing portal session: $e');
+      if (e is BusinessException) rethrow;
       throw BusinessException(message: 'Failed to open billing portal');
     }
   }

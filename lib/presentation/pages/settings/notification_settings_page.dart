@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/notification_settings.dart';
 import '../../../services/notification/push_notification_service.dart';
+import '../../../services/notification/email_sms_service.dart';
 import '../../providers/auth_provider.dart';
 
 class NotificationSettingsPage extends ConsumerStatefulWidget {
@@ -13,6 +14,7 @@ class NotificationSettingsPage extends ConsumerStatefulWidget {
 
 class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsPage> {
   final _notificationService = PushNotificationService();
+  final _emailSmsService = EmailSmsService();
   NotificationSettings? _settings;
   bool _loading = true;
 
@@ -193,6 +195,18 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
                 ? (value) {
                     setState(() {
                       _settings = _settings!.copyWith(emailNotifications: value);
+                    });
+                  }
+                : null,
+          ),
+          SwitchListTile(
+            title: const Text('SMS Notifications'),
+            subtitle: const Text('Receive notifications via SMS (charges may apply)'),
+            value: _settings!.smsNotifications,
+            onChanged: _settings!.enabled
+                ? (value) {
+                    setState(() {
+                      _settings = _settings!.copyWith(smsNotifications: value);
                     });
                   }
                 : null,

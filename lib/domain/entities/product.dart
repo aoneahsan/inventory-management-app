@@ -24,6 +24,8 @@ class Product extends Equatable {
   final Map<String, dynamic> metadata;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String currencyCode; // Currency code for prices
+  final Map<String, double>? multiCurrencyPrices; // Prices in different currencies
 
   const Product({
     required this.id,
@@ -49,6 +51,8 @@ class Product extends Equatable {
     this.metadata = const {},
     required this.createdAt,
     required this.updatedAt,
+    this.currencyCode = 'USD',
+    this.multiCurrencyPrices,
   });
 
   bool get isLowStock => currentStock <= minStock;
@@ -87,6 +91,8 @@ class Product extends Equatable {
     Map<String, dynamic>? metadata,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? currencyCode,
+    Map<String, double>? multiCurrencyPrices,
   }) {
     return Product(
       id: id ?? this.id,
@@ -112,6 +118,8 @@ class Product extends Equatable {
       metadata: metadata ?? this.metadata,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      currencyCode: currencyCode ?? this.currencyCode,
+      multiCurrencyPrices: multiCurrencyPrices ?? this.multiCurrencyPrices,
     );
   }
 
@@ -140,6 +148,8 @@ class Product extends Equatable {
       'metadata': metadata,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'currency_code': currencyCode,
+      'multi_currency_prices': multiCurrencyPrices,
     };
   }
 
@@ -168,6 +178,10 @@ class Product extends Equatable {
       metadata: json['metadata'] as Map<String, dynamic>? ?? {},
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      currencyCode: json['currency_code'] as String? ?? 'USD',
+      multiCurrencyPrices: json['multi_currency_prices'] != null
+          ? Map<String, double>.from(json['multi_currency_prices'] as Map)
+          : null,
     );
   }
 
@@ -196,5 +210,7 @@ class Product extends Equatable {
         metadata,
         createdAt,
         updatedAt,
+        currencyCode,
+        multiCurrencyPrices,
       ];
 }

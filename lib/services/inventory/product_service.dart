@@ -3,16 +3,24 @@ import '../../domain/entities/product.dart';
 import '../../domain/entities/inventory_movement.dart';
 import '../../core/errors/exceptions.dart';
 import '../database/database.dart';
+import '../notification/email_sms_service.dart';
+import '../notification/push_notification_service.dart';
 
 class ProductService {
   final FirebaseFirestore _firestore;
   final AppDatabase _database;
+  final EmailSmsService _emailSmsService;
+  final PushNotificationService _pushNotificationService;
 
   ProductService({
     FirebaseFirestore? firestore,
     AppDatabase? database,
+    EmailSmsService? emailSmsService,
+    PushNotificationService? pushNotificationService,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _database = database ?? AppDatabase.instance;
+        _database = database ?? AppDatabase.instance,
+        _emailSmsService = emailSmsService ?? EmailSmsService(),
+        _pushNotificationService = pushNotificationService ?? PushNotificationService();
 
   // Product CRUD operations
   Future<List<Product>> getProducts(
@@ -255,6 +263,13 @@ class ProductService {
         movement.id,
         movement.toJson(),
       );
+      
+      // Check if stock went low after this movement
+      if (type == MovementType.sale || 
+          type == MovementType.damage || 
+          type == MovementType.expired) {
+        await _checkAndSendLowStockNotification(product, quantity);
+      }
     } catch (e) {
       if (e is BusinessException) rethrow;
       throw BusinessException(message: 'Failed to record inventory movement: $e');
@@ -397,6 +412,95 @@ class ProductService {
       }
     } catch (e) {
       throw BusinessException(message: 'Failed to bulk delete products: $e');
+    }
+  }
+
+  // Notification helpers
+  Future<void> _checkAndSendLowStockNotification(
+    Product product,
+    double quantityMoved,
+  ) async {
+    try {
+      // Calculate new stock after movement
+      final newStock = product.currentStock - quantityMoved;
+      
+      // Get organization's users who have low stock alerts enabled
+      final orgUsers = await _firestore
+          .collection('users')
+          .where('organization_id', isEqualTo: product.organizationId)
+          .get();
+      
+      for (final userDoc in orgUsers.docs) {
+        final userId = userDoc.id;
+        
+        // Check user's notification settings
+        final settings = await _pushNotificationService.getNotificationSettings(userId);
+        
+        if (settings.enabled && settings.lowStockAlerts) {
+          // Check if stock fell below threshold
+          if (newStock <= settings.lowStockThreshold && 
+              product.currentStock > settings.lowStockThreshold) {
+            
+            // Send notifications based on user's preferences
+            if (settings.emailNotifications) {
+              await _emailSmsService.sendLowStockNotification(
+                productName: product.name,
+                productSku: product.sku,
+                currentStock: newStock.toInt(),
+                threshold: settings.lowStockThreshold,
+              );
+            }
+            
+            if (settings.smsNotifications) {
+              // SMS notifications would be sent here if phone number is available
+              // For now, we'll skip SMS as it requires phone number setup
+            }
+            
+            if (settings.pushNotifications) {
+              await _pushNotificationService.sendNotification(
+                userId: userId,
+                title: 'Low Stock Alert',
+                body: '${product.name} (${product.sku}) is running low. Only ${newStock.toInt()} units remaining.',
+                data: {
+                  'type': 'low_stock',
+                  'product_id': product.id,
+                  'product_name': product.name,
+                  'current_stock': newStock.toString(),
+                },
+              );
+            }
+          }
+          
+          // Check if product is out of stock
+          if (newStock <= 0 && product.currentStock > 0) {
+            if (settings.emailNotifications) {
+              await _emailSmsService.sendNotification(
+                template: 'outOfStock',
+                data: {
+                  'product_name': product.name,
+                  'product_sku': product.sku,
+                },
+              );
+            }
+            
+            if (settings.pushNotifications) {
+              await _pushNotificationService.sendNotification(
+                userId: userId,
+                title: 'Out of Stock Alert',
+                body: '${product.name} (${product.sku}) is now out of stock!',
+                data: {
+                  'type': 'out_of_stock',
+                  'product_id': product.id,
+                  'product_name': product.name,
+                },
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Don't fail the inventory movement if notification fails
+      print('Error sending low stock notification: $e');
     }
   }
 }
