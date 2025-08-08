@@ -11,6 +11,7 @@ import 'package:sqflite/sqflite.dart';
 import 'firebase_options.dart';
 import 'core/config/app_config.dart';
 import 'services/permissions/permission_service.dart';
+import 'services/notification/push_notification_service.dart';
 import 'presentation/app.dart';
 
 void main() async {
@@ -65,6 +66,14 @@ void main() async {
       await permissionService.initializeDefaultPermissions();
     } catch (e) {
       debugPrint('Warning: Failed to initialize permissions: $e');
+    }
+    
+    // Initialize push notifications
+    try {
+      final notificationService = PushNotificationService();
+      await notificationService.initialize();
+    } catch (e) {
+      debugPrint('Warning: Failed to initialize notifications: $e');
     }
     
     // Initialize date formatting

@@ -33,6 +33,10 @@ import '../pages/composite/composite_items_page.dart';
 import '../pages/repackaging/repackaging_page.dart';
 import '../pages/communication/communication_templates_page.dart';
 import '../pages/reporting/scheduled_reports_page.dart';
+import '../pages/notifications/notifications_page.dart';
+import '../pages/settings/notification_settings_page.dart';
+import '../pages/export/data_export_page.dart';
+import '../pages/analytics/analytics_charts_page.dart';
 import 'router_notifier.dart';
 
 class AppRouter {
@@ -70,6 +74,10 @@ class AppRouter {
   static const String repackaging = '/repackaging';
   static const String communication = '/communication';
   static const String scheduledReports = '/scheduled-reports';
+  static const String notifications = '/notifications';
+  static const String notificationSettings = '/settings/notifications';
+  static const String dataExport = '/export';
+  static const String analyticsCharts = '/analytics/charts';
 
   static GoRouter router(Ref ref) {
     final routerNotifier = ref.watch(routerNotifierProvider);
@@ -275,6 +283,17 @@ class AppRouter {
           path: scheduledReports,
           name: 'scheduledReports',
           builder: (context, state) => const ScheduledReportsPage(),
+        ),
+        // Notification routes
+        GoRoute(
+          path: notifications,
+          name: 'notifications',
+          builder: (context, state) => const NotificationsPage(),
+        ),
+        GoRoute(
+          path: notificationSettings,
+          name: 'notificationSettings',
+          builder: (context, state) => const NotificationSettingsPage(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(
