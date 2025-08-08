@@ -635,10 +635,16 @@ class _SystemAdminPanelState extends ConsumerState<SystemAdminPanel>
     }
   }
 
-  // Dialog methods (simplified implementations)
+  // Dialog methods
   void _showCreateOrganizationDialog() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Create Organization feature coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => _CreateOrganizationDialog(
+        onCreated: () {
+          ref.invalidate(allOrganizationsProvider);
+          ref.invalidate(systemStatsProvider);
+        },
+      ),
     );
   }
 
