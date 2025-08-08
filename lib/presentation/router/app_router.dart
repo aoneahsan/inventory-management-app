@@ -37,6 +37,8 @@ import '../pages/notifications/notifications_page.dart';
 import '../pages/settings/notification_settings_page.dart';
 import '../pages/export/data_export_page.dart';
 import '../pages/analytics/analytics_charts_page.dart';
+import '../pages/backup/backup_restore_page.dart';
+import '../pages/audit/audit_logs_page.dart';
 import 'router_notifier.dart';
 
 class AppRouter {
@@ -78,6 +80,8 @@ class AppRouter {
   static const String notificationSettings = '/settings/notifications';
   static const String dataExport = '/export';
   static const String analyticsCharts = '/analytics/charts';
+  static const String backupRestore = '/backup';
+  static const String auditLogs = '/audit';
 
   static GoRouter router(Ref ref) {
     final routerNotifier = ref.watch(routerNotifierProvider);
@@ -294,6 +298,27 @@ class AppRouter {
           path: notificationSettings,
           name: 'notificationSettings',
           builder: (context, state) => const NotificationSettingsPage(),
+        ),
+        // Data Management routes
+        GoRoute(
+          path: dataExport,
+          name: 'dataExport',
+          builder: (context, state) => const DataExportPage(),
+        ),
+        GoRoute(
+          path: analyticsCharts,
+          name: 'analyticsCharts',
+          builder: (context, state) => const AnalyticsChartsPage(),
+        ),
+        GoRoute(
+          path: backupRestore,
+          name: 'backupRestore',
+          builder: (context, state) => const BackupRestorePage(),
+        ),
+        GoRoute(
+          path: auditLogs,
+          name: 'auditLogs',
+          builder: (context, state) => const AuditLogsPage(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

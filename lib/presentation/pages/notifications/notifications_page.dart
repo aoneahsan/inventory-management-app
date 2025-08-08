@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/notification/push_notification_service.dart';
-import '../../../core/providers.dart';
-import '../../../core/routes.dart';
+import '../../providers/auth_provider.dart';
+import '../../router/app_router.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsPage extends ConsumerStatefulWidget {
@@ -31,7 +31,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              ref.read(routerProvider).push(Routes.notificationSettings);
+              Navigator.of(context).pushNamed(AppRouter.notificationSettings);
             },
           ),
           PopupMenuButton<String>(
@@ -138,21 +138,21 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                     
                     switch (type) {
                       case 'low_stock':
-                        if (targetId != null) {
+                        if (targetId != null && context.mounted) {
                           // Navigate to product details
-                          ref.read(routerProvider).push('/products/$targetId');
+                          Navigator.of(context).pushNamed('/products/$targetId');
                         }
                         break;
                       case 'order_update':
-                        if (targetId != null) {
+                        if (targetId != null && context.mounted) {
                           // Navigate to order details
-                          ref.read(routerProvider).push('/orders/$targetId');
+                          Navigator.of(context).pushNamed('/orders/$targetId');
                         }
                         break;
                       case 'stock_transfer':
-                        if (targetId != null) {
+                        if (targetId != null && context.mounted) {
                           // Navigate to stock transfer
-                          ref.read(routerProvider).push('/stock-transfers/$targetId');
+                          Navigator.of(context).pushNamed('/stock-transfers/$targetId');
                         }
                         break;
                     }
@@ -220,7 +220,7 @@ class _NotificationTile extends StatelessWidget {
     
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: _getIconColor(context).withOpacity(0.1),
+        backgroundColor: _getIconColor(context).withValues(alpha: 0.1),
         child: Icon(
           _getIcon(),
           color: _getIconColor(context),

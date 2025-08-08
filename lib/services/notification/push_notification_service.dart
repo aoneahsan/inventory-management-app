@@ -2,8 +2,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../database/database_service.dart';
-import '../../domain/entities/notification_settings.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../domain/entities/notification_settings.dart' as app_settings;
 
 // Background message handler
 @pragma('vm:entry-point')
@@ -94,8 +94,8 @@ class PushNotificationService {
 
   Future<void> _saveTokenToDatabase(String token) async {
     try {
-      final db = DatabaseService();
-      final userId = await db.getCurrentUserId();
+      // For now, get user ID from Firebase Auth
+      final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId != null) {
         await _firestore.collection('users').doc(userId).update({
           'fcm_token': token,
@@ -276,7 +276,7 @@ class PushNotificationService {
   }
 
   // Get notification settings
-  Future<NotificationSettings?> getNotificationSettings(String userId) async {
+  Future<app_settings.NotificationSettings?> getNotificationSettings(String userId) async {
     try {
       final doc = await _firestore
           .collection('notification_settings')
@@ -284,11 +284,11 @@ class PushNotificationService {
           .get();
       
       if (doc.exists) {
-        return NotificationSettings.fromJson(doc.data()!);
+        return app_settings.NotificationSettings.fromJson(doc.data()!);
       }
       
       // Create default settings if none exist
-      final defaultSettings = NotificationSettings(userId: userId);
+      final defaultSettings = app_settings.NotificationSettings(userId: userId);
       await saveNotificationSettings(defaultSettings);
       return defaultSettings;
     } catch (e) {
@@ -298,7 +298,7 @@ class PushNotificationService {
   }
 
   // Save notification settings
-  Future<void> saveNotificationSettings(NotificationSettings settings) async {
+  Future<void> saveNotificationSettings(app_settings.NotificationSettings settings) async {
     try {
       await _firestore
           .collection('notification_settings')

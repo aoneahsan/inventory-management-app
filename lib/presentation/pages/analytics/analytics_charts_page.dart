@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../services/analytics/analytics_service.dart';
-import '../../../core/providers.dart';
+import '../../providers/auth_provider.dart';
 
 class AnalyticsChartsPage extends ConsumerStatefulWidget {
   const AnalyticsChartsPage({super.key});
@@ -25,10 +25,18 @@ class _AnalyticsChartsPageState extends ConsumerState<AnalyticsChartsPage> {
   Future<void> _loadAnalytics() async {
     final org = ref.read(currentOrganizationProvider);
     if (org != null) {
-      final data = await _analyticsService.getOrganizationAnalytics(org.id);
+      final data = await _analyticsService.getAnalyticsData(org.id);
       if (mounted) {
         setState(() {
-          _analyticsData = data;
+          _analyticsData = {
+            ...data,
+            'lowStockCount': data['low_stock_count'],
+            'normalStockCount': (data['total_products'] as int) - 
+                (data['low_stock_count'] as int) - 
+                (data['out_of_stock'] as int),
+            'overstockCount': 0,
+            'categoryStats': data['category_stats'] ?? [],
+          };
           _loading = false;
         });
       }
@@ -166,7 +174,7 @@ class _AnalyticsChartsPageState extends ConsumerState<AnalyticsChartsPage> {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Center(

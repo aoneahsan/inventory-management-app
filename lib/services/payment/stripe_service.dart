@@ -11,7 +11,6 @@ import 'stripe_service_impl.dart';
 // and mock implementation in development
 class StripeService {
   final FirebaseFirestore _firestore;
-  final FirebaseFunctions _functions;
   final StripeServiceImpl? _realService;
   
   // Price IDs for different tiers (would come from Stripe dashboard)
@@ -27,14 +26,13 @@ class StripeService {
     FirebaseFirestore? firestore,
     FirebaseFunctions? functions,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _functions = functions ?? FirebaseFunctions.instance,
         _realService = Environment.isDevelopment && !kIsWeb
             ? null
-            : StripeServiceImpl(firestore: firestore, functions: functions);
+            : StripeServiceImpl(firestore: firestore ?? FirebaseFirestore.instance, functions: functions ?? FirebaseFunctions.instance);
 
   Future<void> initializeStripe() async {
     if (_realService != null) {
-      await _realService!.initializeStripe();
+      await _realService.initializeStripe();
     }
   }
 
@@ -51,7 +49,7 @@ class StripeService {
 
     // Use real Stripe in production or when explicitly enabled
     if (_realService != null) {
-      return _realService!.createCheckoutSession(
+      return _realService.createCheckoutSession(
         organizationId: organizationId,
         userId: userId,
         tier: tier,
@@ -87,7 +85,7 @@ class StripeService {
     String? returnUrl,
   }) async {
     if (_realService != null) {
-      return _realService!.createBillingPortalSession(
+      return _realService.createBillingPortalSession(
         organizationId: organizationId,
         returnUrl: returnUrl,
       );
@@ -100,7 +98,7 @@ class StripeService {
 
   Future<void> cancelSubscription(String organizationId) async {
     if (_realService != null) {
-      return _realService!.cancelSubscription(organizationId);
+      return _realService.cancelSubscription(organizationId);
     }
 
     // Mock implementation
@@ -123,7 +121,7 @@ class StripeService {
 
   Future<Map<String, dynamic>> getSubscriptionDetails(String organizationId) async {
     if (_realService != null) {
-      return _realService!.getSubscriptionDetails(organizationId);
+      return _realService.getSubscriptionDetails(organizationId);
     }
 
     // Mock implementation
@@ -169,7 +167,7 @@ class StripeService {
 
   Future<List<Map<String, dynamic>>> getInvoices(String organizationId) async {
     if (_realService != null) {
-      return _realService!.getInvoices(organizationId);
+      return _realService.getInvoices(organizationId);
     }
 
     // Mock implementation
@@ -200,7 +198,7 @@ class StripeService {
     required String paymentMethodId,
   }) async {
     if (_realService != null) {
-      return _realService!.updatePaymentMethod(
+      return _realService.updatePaymentMethod(
         organizationId: organizationId,
         paymentMethodId: paymentMethodId,
       );
@@ -219,7 +217,7 @@ class StripeService {
     required SubscriptionTier tier,
   }) async {
     if (_realService != null) {
-      return _realService!.initPaymentSheet(
+      return _realService.initPaymentSheet(
         organizationId: organizationId,
         tier: tier,
       );
@@ -232,7 +230,7 @@ class StripeService {
 
   Future<void> presentPaymentSheet() async {
     if (_realService != null) {
-      return _realService!.presentPaymentSheet();
+      return _realService.presentPaymentSheet();
     }
 
     // Mock implementation

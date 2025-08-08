@@ -89,21 +89,14 @@ class StripeServiceImpl {
 
       // Call Cloud Function to create billing portal session
       final callable = _functions.httpsCallable('createStripeBillingPortalSession');
-      final result = await callable.call({
+      await callable.call({
         'customerId': stripeCustomerId,
         'returnUrl': returnUrl ?? Environment.appUrl,
       });
 
-      final portalUrl = result.data['url'] as String;
-      
-      // Open the billing portal URL
-      if (kIsWeb) {
-        // For web, redirect to the portal
-        throw UnimplementedError('Web URL launching needs to be implemented');
-      } else {
-        // For mobile, open in webview or external browser
-        throw UnimplementedError('Mobile URL launching needs to be implemented');
-      }
+      // Portal URL is available at: result.data['url']
+      // TODO: Implement URL launching for web and mobile
+      throw UnimplementedError('URL launching needs to be implemented');
     } catch (e) {
       debugPrint('Error creating billing portal session: $e');
       throw BusinessException(message: 'Failed to open billing portal');

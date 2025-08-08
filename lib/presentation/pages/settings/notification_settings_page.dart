@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/notification_settings.dart';
 import '../../../services/notification/push_notification_service.dart';
-import '../../../core/providers.dart';
+import '../../providers/auth_provider.dart';
 
 class NotificationSettingsPage extends ConsumerStatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -95,15 +95,23 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
           
           // Notification Types
           ListTile(
-            title: const Text('Notification Types'),
-            subtitle: const Text('Choose which notifications to receive'),
-            enabled: _settings!.enabled,
+            title: Text(
+              'Notification Types',
+              style: TextStyle(
+                color: _settings!.enabled ? null : Theme.of(context).disabledColor,
+              ),
+            ),
+            subtitle: Text(
+              'Choose which notifications to receive',
+              style: TextStyle(
+                color: _settings!.enabled ? null : Theme.of(context).disabledColor,
+              ),
+            ),
           ),
           SwitchListTile(
             title: const Text('Low Stock Alerts'),
             subtitle: const Text('Get notified when products are running low'),
             value: _settings!.lowStockAlerts,
-            enabled: _settings!.enabled,
             onChanged: _settings!.enabled
                 ? (value) {
                     setState(() {
@@ -116,7 +124,6 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
             title: const Text('Order Updates'),
             subtitle: const Text('Receive updates about order status'),
             value: _settings!.orderUpdates,
-            enabled: _settings!.enabled,
             onChanged: _settings!.enabled
                 ? (value) {
                     setState(() {
@@ -129,7 +136,6 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
             title: const Text('Stock Transfer Alerts'),
             subtitle: const Text('Get notified about stock transfers'),
             value: _settings!.stockTransferAlerts,
-            enabled: _settings!.enabled,
             onChanged: _settings!.enabled
                 ? (value) {
                     setState(() {
@@ -142,7 +148,6 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
             title: const Text('System Announcements'),
             subtitle: const Text('Important updates and announcements'),
             value: _settings!.systemAnnouncements,
-            enabled: _settings!.enabled,
             onChanged: _settings!.enabled
                 ? (value) {
                     setState(() {
@@ -155,15 +160,23 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
           
           // Delivery Methods
           ListTile(
-            title: const Text('Delivery Methods'),
-            subtitle: const Text('How you want to receive notifications'),
-            enabled: _settings!.enabled,
+            title: Text(
+              'Delivery Methods',
+              style: TextStyle(
+                color: _settings!.enabled ? null : Theme.of(context).disabledColor,
+              ),
+            ),
+            subtitle: Text(
+              'How you want to receive notifications',
+              style: TextStyle(
+                color: _settings!.enabled ? null : Theme.of(context).disabledColor,
+              ),
+            ),
           ),
           SwitchListTile(
             title: const Text('Push Notifications'),
             subtitle: const Text('Receive push notifications on your device'),
             value: _settings!.pushNotifications,
-            enabled: _settings!.enabled,
             onChanged: _settings!.enabled
                 ? (value) {
                     setState(() {
@@ -176,7 +189,6 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
             title: const Text('Email Notifications'),
             subtitle: const Text('Receive notifications via email'),
             value: _settings!.emailNotifications,
-            enabled: _settings!.enabled,
             onChanged: _settings!.enabled
                 ? (value) {
                     setState(() {
@@ -189,9 +201,18 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
           
           // Low Stock Threshold
           ListTile(
-            title: const Text('Low Stock Threshold'),
-            subtitle: Text('Alert when stock falls below ${_settings!.lowStockThreshold} units'),
-            enabled: _settings!.enabled && _settings!.lowStockAlerts,
+            title: Text(
+              'Low Stock Threshold',
+              style: TextStyle(
+                color: _settings!.enabled && _settings!.lowStockAlerts ? null : Theme.of(context).disabledColor,
+              ),
+            ),
+            subtitle: Text(
+              'Alert when stock falls below ${_settings!.lowStockThreshold} units',
+              style: TextStyle(
+                color: _settings!.enabled && _settings!.lowStockAlerts ? null : Theme.of(context).disabledColor,
+              ),
+            ),
             trailing: SizedBox(
               width: 100,
               child: TextField(

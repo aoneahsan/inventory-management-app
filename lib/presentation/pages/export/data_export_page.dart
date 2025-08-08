@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../services/export/data_export_service.dart';
-import '../../../services/database/database_service.dart';
+import '../../../services/database/database.dart';
+import '../../../domain/entities/product.dart';
 
 class DataExportPage extends ConsumerStatefulWidget {
   const DataExportPage({super.key});
@@ -15,15 +16,17 @@ class DataExportPage extends ConsumerStatefulWidget {
 
 class _DataExportPageState extends ConsumerState<DataExportPage> {
   final _exportService = DataExportService();
-  final _dbService = DatabaseService();
+  final _database = AppDatabase.instance;
   bool _exporting = false;
 
   Future<void> _exportData(String format) async {
     setState(() => _exporting = true);
 
     try {
-      // Get products
-      final products = await _dbService.getAllProducts();
+      // Get products from database
+      final db = await _database.database;
+      final productsData = await db.query('products');
+      final products = productsData.map((p) => Product.fromJson(p)).toList();
       
       String content;
       String fileName;
@@ -76,7 +79,9 @@ class _DataExportPageState extends ConsumerState<DataExportPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           const Text(
             'Select Export Format',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -107,6 +112,7 @@ class _DataExportPageState extends ConsumerState<DataExportPage> {
             const Center(child: CircularProgressIndicator()),
           ],
         ],
+        ),
       ),
     );
   }

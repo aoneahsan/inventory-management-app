@@ -327,7 +327,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
-          IconData(int.parse(category.icon!), fontFamily: 'MaterialIcons'),
+          Icons.category,
           color: category.color != null 
               ? Colors.white
               : Colors.blue[700],

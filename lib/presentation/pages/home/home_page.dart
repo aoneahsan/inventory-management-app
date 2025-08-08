@@ -5,6 +5,8 @@ import '../../../services/organization/organization_service.dart';
 import '../../../domain/entities/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../router/app_router.dart';
+import '../../widgets/responsive_layout.dart';
+import '../../widgets/mobile_navigation.dart';
 import '../inventory/products_page.dart';
 import '../inventory/categories_page.dart';
 import '../analytics/analytics_page.dart';
@@ -86,8 +88,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final organization = ref.watch(currentOrganizationProvider);
+    final isMobile = ResponsiveLayout.isMobile(context);
 
     return Scaffold(
+      drawer: isMobile ? const MobileNavigationDrawer() : null,
       appBar: AppBar(
         title: Text(_navigationItems[_selectedIndex].label),
         actions: [
@@ -102,7 +106,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
-              // TODO: Implement notifications
+              context.push('/notifications');
             },
           ),
           PopupMenuButton<String>(
@@ -141,11 +145,75 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _navigationItems.map((item) => item.body ?? Container()).toList(),
+      body: ResponsiveLayout(
+        mobile: IndexedStack(
+          index: _selectedIndex,
+          children: _navigationItems.map((item) => item.body ?? Container()).toList(),
+        ),
+        tablet: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                final item = _navigationItems[index];
+                if (item.onTap != null) {
+                  item.onTap!();
+                } else {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                }
+              },
+              labelType: NavigationRailLabelType.selected,
+              destinations: _navigationItems
+                  .map((item) => NavigationRailDestination(
+                        icon: Icon(item.icon),
+                        label: Text(item.label),
+                      ))
+                  .toList(),
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: _navigationItems.map((item) => item.body ?? Container()).toList(),
+              ),
+            ),
+          ],
+        ),
+        desktop: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                final item = _navigationItems[index];
+                if (item.onTap != null) {
+                  item.onTap!();
+                } else {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                }
+              },
+              extended: true,
+              destinations: _navigationItems
+                  .map((item) => NavigationRailDestination(
+                        icon: Icon(item.icon),
+                        label: Text(item.label),
+                      ))
+                  .toList(),
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: _navigationItems.map((item) => item.body ?? Container()).toList(),
+              ),
+            ),
+          ],
+        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
           final item = _navigationItems[index];
@@ -164,7 +232,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   label: item.label,
                 ))
             .toList(),
-      ),
+      ) : null,
     );
   }
 }
@@ -229,13 +297,22 @@ class _DashboardView extends ConsumerWidget {
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
               const SizedBox(height: 24),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = ResponsiveValue(
+                    mobile: 2,
+                    tablet: 3,
+                    desktop: 4,
+                  ).getValue(context);
+                  
+                  return GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: crossAxisCount,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: ResponsiveLayout.isMobile(context) ? 1.2 : 1.5,
+                    children: [
                   _DashboardCard(
                     title: 'Total Products',
                     value: '${stats['total_products'] ?? 0}',
@@ -261,6 +338,8 @@ class _DashboardView extends ConsumerWidget {
                     color: Colors.purple,
                   ),
                 ],
+                  );
+                },
               ),
               const SizedBox(height: 24),
               const Text(
@@ -447,10 +526,10 @@ class _ProfileView extends ConsumerWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.notifications_outlined),
-                  title: const Text('Notifications'),
+                  title: const Text('Notification Settings'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    context.push('/settings/notifications');
+                    context.push('/notification-settings');
                   },
                 ),
                 const Divider(height: 1),

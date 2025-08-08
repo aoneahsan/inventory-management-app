@@ -14,7 +14,7 @@ class DataExportService {
         p.sku,
         p.categoryId ?? '',
         p.currentStock,
-        p.unitPrice,
+        p.sellingPrice ?? 0,
         p.isActive ? 'Active' : 'Inactive',
       ]),
     ];
@@ -39,7 +39,7 @@ class DataExportService {
           builder.element('name', nest: product.name);
           builder.element('sku', nest: product.sku);
           builder.element('currentStock', nest: product.currentStock.toString());
-          builder.element('unitPrice', nest: product.unitPrice.toString());
+          builder.element('sellingPrice', nest: (product.sellingPrice ?? 0).toString());
         });
       }
     });
